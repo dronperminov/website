@@ -3,11 +3,14 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from uvicorn.config import LOGGING_CONFIG
 
-from src.api import api
+from src.api import api, blog, projects, research
 
 
 def init_routers() -> None:
     app.include_router(api.router)
+    app.include_router(research.router)
+    app.include_router(blog.router)
+    app.include_router(projects.router)
 
 
 def init_static_directories() -> None:
