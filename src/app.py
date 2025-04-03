@@ -1,8 +1,12 @@
+from contextlib import asynccontextmanager
+from typing import AsyncContextManager
+
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from uvicorn.config import LOGGING_CONFIG
 
+from src import database
 from src.api import api, blog, projects, research
 
 
@@ -27,7 +31,14 @@ def init_logging_config() -> None:
     LOGGING_CONFIG["formatters"]["access"]["datefmt"] = "%Y-%m-%d %H:%M:%S"
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncContextManager[None]:
+    database.connect()
+    yield
+    database.close()
+
+
+app = FastAPI(lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
 init_routers()

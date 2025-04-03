@@ -1,5 +1,6 @@
 fastapi
 Jinja2
+pymongo
 python-multipart
 requests
 uvicorn[standard]
