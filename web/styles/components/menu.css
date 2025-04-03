@@ -1,0 +1,136 @@
+header {
+    position: sticky;
+    padding: 1em 0;
+    top: 0;
+    background: var(--background-color);
+}
+
+header input[type="checkbox"], header .logo-hamb {
+    display: none;
+}
+
+header nav {
+    background: var(--background-color);
+    font-size: 1.2em;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+nav a {
+    color: var(--text-color);
+    display: inline-block;
+    margin: 0 0.75em;
+    padding-bottom: 5px;
+    text-decoration: none;
+}
+
+nav a:first-child {
+    margin-left: 0;
+}
+
+nav a:last-child {
+    margin-right: 0;
+}
+
+nav .current-page span {
+    border-bottom: 3px solid var(--main-color);
+}
+
+nav a:hover {
+    color: var(--main-color);
+}
+
+nav .current-page:hover {
+    color: var(--text-color);
+    cursor: default;
+}
+
+@media (max-width: 767px) {
+    header {
+        padding: 10px 0;
+        margin-bottom: 1em;
+    }
+
+    header .logo-hamb {
+        display: grid;
+        grid-template-columns: 1fr 30px;
+        grid-gap: 10px;
+        align-items: center;
+    }
+
+    header .logo-hamb img {
+        width: 28px;
+        vertical-align: middle;
+    }
+
+    header .hamb {
+        cursor: pointer;
+        padding: 15px 0;
+    }
+
+    header .hamb span {
+        background: var(--text-color);
+        display: block;
+        height: 2px;
+        position: relative;
+        width: 28px;
+    }
+
+    header .hamb span::before, .hamb span::after {
+        background: var(--text-color);
+        content: "";
+        display: block;
+        height: 100%;
+        position: absolute;
+        transition: all .2s ease-out;
+        width: 100%;
+    }
+
+    header .hamb span::before {
+        top: 6px;
+    }
+
+    header .hamb span::after {
+        top: -6px;
+    }
+
+    header nav {
+        font-size: 1.4em;
+        left: 0;
+        max-height: 0;
+        overflow: hidden;
+        padding: 0 1em;
+        position: fixed;
+        text-align: right;
+        top: 52px;
+        transition: 0.2s max-height;
+        width: 100%;
+        z-index: 9999;
+    }
+
+    header nav a {
+        display: block;
+        margin: 0.6em 0;
+    }
+
+    header .side-menu:checked ~ nav {
+        height: calc(100dvh - 52px);
+        max-height: calc(100dvh - 52px);
+        overflow-y: auto;
+        transition: 0.2s max-height;
+    }
+
+    header .side-menu:checked ~ .logo-hamb .hamb span {
+        background: transparent;
+    }
+
+    header .side-menu:checked ~ .logo-hamb .hamb span::before {
+        transform: rotate(-45deg);
+        top: 0;
+    }
+
+    header .side-menu:checked ~ .logo-hamb .hamb span::after {
+        transform: rotate(45deg);
+        top: 0;
+    }
+}

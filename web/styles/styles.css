@@ -1,0 +1,97 @@
+:root {
+    --background-color: #fbe6cb;
+    --text-color: #222222;
+    --description-color: #777777;
+    --main-color: #fe7a81;
+    --text-font-family: Inter;
+
+    --menu-border-color: #aaaaaa;
+
+    --section-background-color: #fff9f0;
+
+    --section-light-background-color: #fffbf6;
+    --section-light-border-color: #e5e2e4;
+}
+
+@font-face {
+    font-family: Inter;
+    src: url("/fonts/Inter-Regular.ttf");
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: var(--text-font-family);
+    font-size: 20px;
+    padding: 0 2em 1em 2em;
+}
+
+body {
+    padding: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+section {
+    background: var(--section-background-color);
+    padding: 1em;
+    border-radius: 1em;
+    margin-top: 1em;
+    scroll-margin-top: 84px;
+}
+
+section h2 {
+    margin-top: 0;
+}
+
+section h2, section h3, section p {
+    width: 100%;
+}
+
+section p:last-child {
+    margin-bottom: 0;
+}
+
+.link {
+    color: var(--main-color);
+    border-bottom: 1px dashed var(--main-color);
+    text-decoration: none;
+}
+
+.link:hover {
+    border-bottom: 1px solid var(--main-color)
+}
+
+.highlight {
+    color: var(--main-color);
+}
+
+.line {
+    margin: 1em 0;
+    height: 1px;
+    background-color: var(--main-color);
+}
+
+.icon {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: bottom;
+}
+
+.list {
+    display: grid;
+    grid-auto-flow: row;
+    grid-gap: 1em;
+    width: 100%;
+}
+
+@media (max-width: 767px) {
+    html {
+        font-size: 16px;
+        padding: 0 0.8em 0.5em;
+    }
+}

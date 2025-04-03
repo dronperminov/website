@@ -1,0 +1,112 @@
+{% set title = "Dronperminov | Личный сайт" %}
+{% set description = "Личный сайт разрабочика и исследователя Перминова Андрея Игоревича" %}
+{% include "components/header.html" %}
+
+    <link rel="stylesheet" type="text/css" href="/styles/index.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+
+    <div class="hello">
+        <div>
+            <h1>Привет, я <b class="highlight">Андрей</b>!</h1>
+            <h2>Python/JS разработчик и <b class="highlight">ИИ</b>&#8209;исследователь.</h2>
+        </div>
+        <div>
+            <img src="/images/avatars/avatar_320.jpg" alt="мой аватар">
+        </div>
+    </div>
+
+    <section id="about">
+        <h2>Обо мне</h2>
+        
+        <p>Привет! Я Перминов Андрей, и я являюсь разработчиком, исследователем и просто человеком, которому нравится разбираться в сложных вещах и объяснять их простым языком.</p>
+
+        <p><img class="icon" src="/images/icons/research.svg" alt="research icon"> <b class="highlight">Компьютерное зрение и доверенный ИИ</b> – исследую методы, которые делают модели точнее, надёжнее и понятнее.</p>
+        <p><img class="icon" src="/images/icons/brain.svg" alt="brain icon"> <b class="highlight">Нейронные сети для обработки аудио, видео и изображений</b> – изучаю, как извлекать смысл из данных и делать модели более эффективными.</p>
+        <p><img class="icon" src="/images/icons/bike.svg" alt="bike icon"> <b class="highlight">Изобретение велосипедов</b> – обожаю придумывать новые методы и нестандартные решения, даже если они пока никому не нужны.</p>
+        <p><img class="icon" src="/images/icons/web.svg" alt="web icon"> <b class="highlight">Веб-приложения и сервисы</b> – разрабатываю инструменты и проекты на чистом JavaScript, без тяжёлых фреймворков, ради скорости и полного контроля над кодом.</p>
+
+        <div class="line"></div>
+
+        <h3>Небольшой блиц</h3>
+
+        <div class="list">
+            <div><img class="icon" src="/images/icons/cake.svg" alt="birthday icon"> <b class="highlight">День рождения</b>: 20 февраля 1998</div>
+            <div><img class="icon" src="/images/icons/work.svg" alt="work bag icon"> <b class="highlight">Работа</b>: Python backend/ML разработчик в ИСП РАН</div>
+            <div><img class="icon" src="/images/icons/hobby.svg" alt="hobby icon"> <b class="highlight">Хобби</b>: программирование, квизы и езда на велосипеде</div>
+        </div>
+
+        <div class="line"></div>
+
+        <p>Этот сайт — место, где я делюсь своими исследованиями, проектами, идеями и иногда мемами, которые меня зацепили. Добро пожаловать!</p>
+    </section>
+
+    <section id="articles">
+        <h2>Научные статьи</h2>
+
+        <p>Так уж получилось, что я пошёл в науку, а в науке без написания статей никуда. В этом блоке показаны последние статьи, к которым я приложил свою руку.</p>
+
+        <div class="articles">
+            <div class="article">
+                <div class="article-title">
+                    <img class="icon" src="/images/icons/pdf.svg">
+                    A Consistent Method for Generating Synthetic Tabular Data with a Fully Connected Neural Network (2025)
+                </div>
+                <div class="article-authors"><b class="highlight">Авторы</b>: <b>Перминов А.И.</b>, Коваленко А.П. и Турдаков Д.Ю.</div>
+            </div>
+
+            <div class="article">
+                <div class="article-title">
+                    <a href="https://arxiv.org/pdf/2410.15889"><img class="icon" src="/images/icons/pdf.svg"></a>
+                    <a href="https://arxiv.org/abs/2410.15889">Model Mimic Attack: Knowledge Distillation for Provably Transferable Adversarial Examples</a> (2025)
+                </div>
+                <div class="article-authors"><b class="highlight">Авторы</b>: Лукьянов К.С., <b>Перминов А.И.</b>, Турдаков Д.Ю. и Паутов М.</div>
+            </div>
+
+            <div class="article">
+                <div class="article-title">
+                    <a href="https://www.mathnet.ru/links/5cd7ad79e4fd4983400029513f17343b/tisp889.pdf"><img class="icon" src="/images/icons/pdf.svg"></a>
+                    <a href="https://www.mathnet.ru/eng/tisp889">SLAP simple linear attack for perceptron</a> (2024)
+                </div>
+                <div class="article-authors"><b class="highlight">Автор</b>: <b>Перминов А.И.</b></div>
+            </div>
+        </div>
+
+        <p>Больше статей и других научных материалов можно найти в разделе <a class="link" href="/research">исследования</a>.</p>
+    </section>
+
+    <section id="education">
+        <h2>Образование</h2>
+
+        <div class="education">
+            <div class="year">2025</div>
+            <div>
+                <div class="education-name">Аспирантура</div>
+                <div class="education-description">ИСП РАН им. В.П. Иванникова</div>
+            </div>
+            <div class="divider"><span></span></div>
+            <div></div>
+            <div class="year">2022</div>
+            <div>
+                <div class="education-name">Магистратура</div>
+                <div class="education-description">ВМК МГУ им. М.В.Ломоносова</div>
+            </div>
+            <div class="divider"><span></span></div>
+            <div></div>
+            <div class="year">2020</div>
+            <div>
+                <div class="education-name">Бакалавриат</div>
+                <div class="education-description">ВМК МГУ им. М.В.Ломоносова</div>
+            </div>
+            <div class="divider"><span></span></div>
+            <div></div>
+            <div class="year">2015</div>
+            <div>
+                <div class="education-name">Среднее образование</div>
+                <div class="education-description">Лицей 1502 при МЭИ</div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>
