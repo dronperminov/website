@@ -58,6 +58,11 @@ nav .current-page:hover {
         align-items: center;
     }
 
+    header .logo a {
+        text-decoration: none;
+        color: var(--text-color);
+    }
+
     header .logo-hamb img {
         width: 28px;
         vertical-align: middle;
