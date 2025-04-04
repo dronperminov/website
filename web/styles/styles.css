@@ -28,6 +28,9 @@ html {
     font-family: var(--text-font-family);
     font-size: 20px;
     padding: 0 2em 1em 2em;
+    text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -87,6 +90,15 @@ section p:last-child {
     grid-auto-flow: row;
     grid-gap: 1em;
     width: 100%;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.loader {
+    text-align: center;
+    padding: 0.5em 0;
 }
 
 @media (max-width: 767px) {

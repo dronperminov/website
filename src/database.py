@@ -1,9 +1,6 @@
 import logging
-from typing import List
 
 from pymongo import MongoClient
-
-from src.entities.article import Article
 
 
 class Database:
@@ -31,10 +28,6 @@ class Database:
     def get_identifier(self, collection_name: str) -> int:
         identifier = self.identifiers.find_one_and_update({"_id": collection_name}, {"$inc": {"value": 1}}, return_document=True)
         return identifier["value"]
-
-    def get_recent_articles(self, count: int) -> List[Article]:
-        articles = self.articles.find({}).sort({"date": -1}).limit(count)
-        return [Article.from_dict(article) for article in articles]
 
     def drop(self) -> None:
         self.client.drop_database(self.database_name)

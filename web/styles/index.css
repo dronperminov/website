@@ -62,38 +62,6 @@
     background: var(--main-color);
 }
 
-.articles {
-    display: grid;
-    grid-auto-flow: row;
-    grid-gap: 1em;
-    justify-items: center;
-}
-
-.article {
-    padding: 0.5em;
-    border-radius: 0.8em;
-    background: var(--section-light-background-color);
-    border: 1px solid var(--section-light-border-color);
-    width: 100%;
-}
-
-.article .article-title {
-    margin-bottom: 0.5em;
-}
-
-.article .article-title a {
-    color: var(--text-color);
-    text-decoration: none;
-}
-
-.article .article-title a:hover {
-    color: var(--main-color);
-}
-
-.article .article-authors {
-    font-size: 0.85em;
-}
-
 @media (max-width: 767px) {
     .hello {
         grid-template-columns: 1fr minmax(120px, 30vw);

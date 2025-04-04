@@ -1,7 +1,10 @@
 from fastapi import APIRouter
-from fastapi.responses import HTMLResponse
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import HTMLResponse, JSONResponse
 
+from src import articles_database
 from src.api import templates
+from src.query_params.articles_search import ArticlesSearch
 from src.utils.common import get_static_hash
 
 router = APIRouter()
@@ -15,3 +18,9 @@ async def research() -> HTMLResponse:
         page="research"
     )
     return HTMLResponse(content=content)
+
+
+@router.post("/search-articles")
+async def search_articles(params: ArticlesSearch) -> JSONResponse:
+    total, articles = articles_database.search(params=params)
+    return JSONResponse({"status": "success", "total": total, "articles": jsonable_encoder(articles)})
