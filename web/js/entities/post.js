@@ -59,13 +59,13 @@ class PicturePost extends Post {
 
     Build() {
         let post = super.Build()
-        this.BuildPicture(post)
+        this.BuildPictures(post)
         this.BuildText(post)
         this.BuildTime(post)
         return post
     }
 
-    BuildPicture(post) {
+    BuildPictures(post) {
         let gallery = new Gallery()
         let pictures = MakeElement(post, {class: "post-pictures"})
 
@@ -73,6 +73,13 @@ class PicturePost extends Post {
             let image = MakeElement(pictures, {src: this.pictures[i].preview_url}, "img")
             image.addEventListener("click", e => gallery.ShowPhoto(i))
             gallery.AddPhoto({url: this.pictures[i].url})
+        }
+
+        if (this.pictures.length == 2) {
+            pictures.style.gridTemplateColumns = `1fr ${this.pictures[1].height / this.pictures[0].height}fr`
+        }
+        else if (this.pictures.length == 4) {
+            pictures.style.gridTemplateColumns = "1fr 1fr"
         }
     }
 }

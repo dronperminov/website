@@ -10,14 +10,18 @@
 .post-pictures {
     margin-bottom: 0.5em;
     display: grid;
-    grid-gap: 0.5em;
+    grid-gap: 5px;
 }
 
 .post-pictures img {
-    vertical-align: middle;
-    max-width: 100%;
     border-radius: 1em;
     border: 2px solid var(--border-color);
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    width: 100%;
+    height: 100%;
+    vertical-align: middle;
 }
 
 .post-time {

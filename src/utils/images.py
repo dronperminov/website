@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import cv2
 
 
-def make_preview(input_path: str, output_path: str, preview_width: Optional[int] = 680, preview_height: Optional[int] = None) -> None:
+def make_preview(input_path: str, output_path: str, preview_width: Optional[int] = 680, preview_height: Optional[int] = None) -> Tuple[int, int]:
     image = cv2.imread(input_path)
     image_height, image_width = image.shape[:2]
 
@@ -25,3 +25,5 @@ def make_preview(input_path: str, output_path: str, preview_width: Optional[int]
     image = image[y:y + height, x:x + width]
     image = cv2.resize(image, (preview_width, preview_height), interpolation=cv2.INTER_AREA)
     cv2.imwrite(output_path, image, [cv2.IMWRITE_WEBP_QUALITY, 95])
+
+    return image_width, image_height
