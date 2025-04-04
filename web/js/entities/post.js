@@ -54,7 +54,7 @@ class TextPost extends Post {
 class PicturePost extends Post {
     constructor(data) {
         super(data)
-        this.pictureURL = data.picture_url
+        this.picture = data.picture
     }
 
     Build() {
@@ -67,6 +67,6 @@ class PicturePost extends Post {
 
     BuildPicture(post) {
         let picture = MakeElement(post, {class: "post-picture"})
-        MakeElement(picture, {src: this.pictureURL}, "img")
+        MakeElement(picture, {src: this.picture.preview_url}, "img")
     }
 }

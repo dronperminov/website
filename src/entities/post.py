@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 
+from src.entities.picture import Picture
 from src.enums import PostType
 
 
@@ -48,7 +49,7 @@ class TextPost(Post):
 @dataclass
 class PicturePost(Post):
     post_type = PostType.PICTURE
-    picture_url: str
+    picture: Picture
 
     @classmethod
     def from_dict(cls: "PicturePost", data: dict) -> "PicturePost":
@@ -56,11 +57,11 @@ class PicturePost(Post):
             post_id=data["post_id"],
             timestamp=data["timestamp"],
             text=data["text"],
-            picture_url=data["picture_url"]
+            picture=Picture.from_dict(data["picture"])
         )
 
     def to_dict(self) -> dict:
         return {
             **super().to_dict(),
-            "picture_url": self.picture_url
+            "picture": self.picture.to_dict()
         }
