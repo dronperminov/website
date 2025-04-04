@@ -7,11 +7,13 @@
     margin-bottom: 1em;
 }
 
-.post-picture {
+.post-pictures {
     margin-bottom: 0.5em;
+    display: grid;
+    grid-gap: 0.5em;
 }
 
-.post-picture img {
+.post-pictures img {
     vertical-align: middle;
     max-width: 100%;
     border-radius: 1em;

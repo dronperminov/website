@@ -37,8 +37,8 @@ Gallery.prototype.BuildImageView = function(view) {
     this.image = this.BuildImage(true)
     this.rightImage = this.BuildImage()
 
-    this.prev = MakeElement(this.imageView, {class: "gallery-icon gallery-prev-icon", src: "/images/gallery-icons/arrow-left.svg"}, "img")
-    this.next = MakeElement(this.imageView, {class: "gallery-icon gallery-next-icon", src: "/images/gallery-icons/arrow-right.svg"}, "img")
+    this.prev = MakeElement(this.imageView, {class: "gallery-icon gallery-prev-icon", src: "/images/icons/arrow-left.svg"}, "img")
+    this.next = MakeElement(this.imageView, {class: "gallery-icon gallery-next-icon", src: "/images/icons/arrow-right.svg"}, "img")
 
     this.prev.addEventListener("click", () => this.Prev())
     this.next.addEventListener("click", () => this.Next())
