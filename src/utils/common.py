@@ -24,3 +24,7 @@ def get_static_hash() -> str:
     hash_md5 = hashlib.md5()
     hash_md5.update(static_hash.encode("utf-8"))
     return hash_md5.hexdigest()
+
+
+def get_extension(filename: str) -> str:
+    return filename.rsplit(".", maxsplit=1)[-1]

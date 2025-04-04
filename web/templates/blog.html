@@ -2,15 +2,45 @@
 {% set description = "Личные записи из моей жизни" %}
 {% include "components/header.html" %}
 
+    <link rel="stylesheet" type="text/css" href="/styles/entities/post.css?v={{version}}">
     <link rel="stylesheet" type="text/css" href="/styles/blog.css?v={{version}}">
 </head>
 <body>
     {% include "components/menu.html" %}
 
     <h1>Блог</h1>
+    <p>На этой странице можно найти всё, что связано с моей жизнью, увлечениями (возможно, мимолётными), а также всякие полезные материалы (я верю, что и такое тут будет)!</p>
 
-    <section>
-    </section>
+    <div class="blog">
+        <div class="left-panel"></div>
+        <div id="posts">
+            <div class="posts"></div>
+        </div>
+        <div class="right-panel"></div>
+    </div>
+
+    <script src="/js/utils/utils.js?v={{version}}"></script>
+    <script src="/js/utils/fetch.js?v={{version}}"></script>
+    <script src="/js/utils/notifications.js?v={{version}}"></script>
+    <script src="/js/utils/infinite_scroll.js?v={{version}}"></script>
+
+    <script src="/js/entities/post.js?v={{version}}"></script>
+
+    <script src="/js/blog.js?v={{version}}"></script>
+
+    <script>
+        let config = {
+            blockId: "posts",
+            pageSize: 10,
+            url: "/search-posts",
+
+            getParams: GetPostsSearchParams,
+            onLoad: LoadPosts
+        }
+
+        let infiniteScroll = new InfiniteScroll(config)
+        infiniteScroll.LoadContent()
+    </script>
 
     {% include "components/footer.html" %}
 </body>

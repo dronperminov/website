@@ -1,0 +1,24 @@
+.post {
+    color: var(--description-color);
+}
+
+.post-text {
+    font-size: 0.9em;
+    margin-bottom: 1em;
+}
+
+.post-picture {
+    margin-bottom: 0.5em;
+}
+
+.post-picture img {
+    vertical-align: middle;
+    max-width: 100%;
+    border-radius: 1em;
+    border: 2px solid var(--border-color);
+}
+
+.post-time {
+    text-align: right;
+    font-size: 0.8em;
+}
