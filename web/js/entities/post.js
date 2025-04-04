@@ -67,6 +67,10 @@ class PicturePost extends Post {
 
     BuildPicture(post) {
         let picture = MakeElement(post, {class: "post-picture"})
-        MakeElement(picture, {src: this.picture.preview_url}, "img")
+        let image = MakeElement(picture, {src: this.picture.preview_url}, "img")
+
+        let gallery = new Gallery()
+        gallery.AddPhoto({url: this.picture.url})
+        image.addEventListener("click", e => gallery.ShowPhoto(0))
     }
 }
