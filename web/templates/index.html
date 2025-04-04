@@ -51,29 +51,18 @@
         <p>Так уж получилось, что я пошёл в науку, а в науке без написания статей никуда. В этом блоке показаны последние статьи, к которым я приложил свою руку.</p>
 
         <div class="articles">
+            {% for article in articles %}
             <div class="article">
                 <div class="article-title">
-                    <img class="icon" src="/images/icons/pdf.svg">
-                    A Consistent Method for Generating Synthetic Tabular Data with a Fully Connected Neural Network (2025)
+                    {% if article.pdf_link %}<a href="{{article.pdf_link}}" target="_blank"><img class="icon" src="/images/icons/pdf.svg">{% endif %}
+                    {% if article.link %}<a href="{{article.link}}" target="_blank">{{article.title}}</a>{% else %}{{article.title}}{% endif %} ({{article.date.year}})
                 </div>
-                <div class="article-authors"><b class="highlight">Авторы</b>: <b>Перминов А.И.</b>, Коваленко А.П. и Турдаков Д.Ю.</div>
-            </div>
-
-            <div class="article">
-                <div class="article-title">
-                    <a href="https://arxiv.org/pdf/2410.15889"><img class="icon" src="/images/icons/pdf.svg"></a>
-                    <a href="https://arxiv.org/abs/2410.15889">Model Mimic Attack: Knowledge Distillation for Provably Transferable Adversarial Examples</a> (2025)
+                <div class="article-authors">
+                    <b class="highlight">Автор{% if article.authors|length > 1%}ы{% endif %}</b>:
+                    {% for author in article.authors %}{% if loop.index > 1 %}, {% endif %}{% if author == "Перминов А.И." %}<b>{{author}}</b>{% else %}{{author}}{% endif %}{% endfor %}
                 </div>
-                <div class="article-authors"><b class="highlight">Авторы</b>: Лукьянов К.С., <b>Перминов А.И.</b>, Турдаков Д.Ю. и Паутов М.</div>
             </div>
-
-            <div class="article">
-                <div class="article-title">
-                    <a href="https://www.mathnet.ru/links/5cd7ad79e4fd4983400029513f17343b/tisp889.pdf"><img class="icon" src="/images/icons/pdf.svg"></a>
-                    <a href="https://www.mathnet.ru/eng/tisp889">SLAP simple linear attack for perceptron</a> (2024)
-                </div>
-                <div class="article-authors"><b class="highlight">Автор</b>: <b>Перминов А.И.</b></div>
-            </div>
+            {% endfor %}
         </div>
 
         <p>Больше статей и других научных материалов можно найти в разделе <a class="link" href="/research">исследования</a>.</p>
