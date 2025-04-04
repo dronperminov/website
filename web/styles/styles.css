@@ -12,6 +12,8 @@
 
     --section-light-background-color: #fffbf6;
     --section-light-border-color: #e5e2e4;
+
+    --footer-background-color: #b15935;
 }
 
 @font-face {
@@ -28,15 +30,17 @@ html {
     color: var(--text-color);
     font-family: var(--text-font-family);
     font-size: 20px;
-    padding: 0 2em 1em 2em;
+    padding: 0 2em 4em 2em;
     text-size-adjust: 100%;
     -moz-text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
+    position: relative;
 }
 
 body {
     padding: 0;
     max-width: 1200px;
+    min-height: calc(100dvh - 4em);
     margin: 0 auto;
 }
 
@@ -102,9 +106,23 @@ section p:last-child {
     padding: 0.5em 0;
 }
 
+footer {
+    align-content: center;
+    background-color: var(--footer-background-color);
+    bottom: 0;
+    color: #ffffff;
+    display: grid;
+    font-size: 0.9em;
+    height: 3em;
+    justify-content: center;
+    position: absolute;
+    left: 0;
+    right: 0;
+}
+
 @media (max-width: 767px) {
     html {
         font-size: 16px;
-        padding: 0 0.8em 0.5em;
+        padding: 0 0.8em 4em 0.8em;
     }
 }
