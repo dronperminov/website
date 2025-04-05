@@ -67,19 +67,15 @@ class PicturePost extends Post {
 
     BuildPictures(post) {
         let gallery = new Gallery()
-        let pictures = MakeElement(post, {class: "post-pictures"})
+        let layout = PicturesLayout.GetLayout(this.pictures)
+        let pictures = MakeElement(post, {class: `post-pictures ${layout}`})
 
         for (let i = 0; i < this.pictures.length; i++) {
-            let image = MakeElement(pictures, {src: this.pictures[i].preview_url}, "img")
+            let picture = MakeElement(pictures, {class: "post-picture"})
+            let aspectRatio = this.pictures[i].width / this.pictures[i].height
+            let image = MakeElement(picture, {src: this.pictures[i].preview_url, style: `aspect-ratio: ${aspectRatio}`}, "img")
             image.addEventListener("click", e => gallery.ShowPhoto(i))
             gallery.AddPhoto({url: this.pictures[i].url})
-        }
-
-        if (this.pictures.length == 2) {
-            pictures.style.gridTemplateColumns = `1fr ${this.pictures[1].height / this.pictures[0].height}fr`
-        }
-        else if (this.pictures.length == 4) {
-            pictures.style.gridTemplateColumns = "1fr 1fr"
         }
     }
 }
