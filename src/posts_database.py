@@ -1,5 +1,5 @@
 import logging
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from src.database import Database
 from src.entities.post import Post
@@ -18,6 +18,10 @@ class PostsDatabase:
     def get_recent(self, count: int) -> List[Post]:
         posts = self.database.posts.find({}).sort({"date": -1}).limit(count)
         return [Post.from_dict(post) for post in posts]
+
+    def get_post(self, post_id: int) -> Optional[Post]:
+        post = self.database.posts.find_one({"post_id": post_id})
+        return Post.from_dict(post) if post else None
 
     def search(self, params: PostsSearch) -> Tuple[int, List[Post]]:
         query, order = params.to_query(), params.to_order()

@@ -1,0 +1,20 @@
+{% set title = "Запрашиваемый пост не найден | Dronperminov" %}
+{% set banner = "/images/errors/no_post.jpg" %}
+{% set banner_width = 720 %}
+{% set banner_height = 720 %}
+{% include "components/header.html" %}
+    <link rel="stylesheet" type="text/css" href="/styles/error.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+
+    <div class="error">
+        <img src="/images/errors/no_post.jpg" alt="no post icon">
+        <h1>Пост не найден</h1>
+
+        <p>Не удалось найти запрашиваемый пост. Возможно он был удалён или не существовал вовсе.</p>
+    </div>
+
+    {% include "components/footer.html" %}
+</body>
+</html>

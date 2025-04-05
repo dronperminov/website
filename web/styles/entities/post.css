@@ -26,3 +26,13 @@
     text-align: right;
     font-size: 0.8em;
 }
+
+.post-page .post-time {
+    text-align: left;
+    margin-bottom: 1em;
+}
+
+.post-page .post-text {
+    color: var(--text-color);
+
+}

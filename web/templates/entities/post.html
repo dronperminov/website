@@ -1,0 +1,37 @@
+{% if post.text %}
+{% set title = "%s | Dronperminov" % (post.text[:80] + ("..." if post.text|length > 80 else "")) %}
+{% else %}
+{% set title = "Пост из блога | Dronperminov" %}
+{% endif %}
+
+{% if post.post_type == "picture" %}
+{% set banner = post.pictures[0].url %}
+{% set banner_width = post.pictures[0].width %}
+{% set banner_height = post.pictures[0].height %}
+{% endif %}
+{% include "components/header.html" %}
+
+    <link rel="stylesheet" type="text/css" href="/styles/entities/post.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/utils/gallery.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/utils/layout.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+
+    <div class="post-page" id="post"></div>
+
+    <script src="/js/utils/utils.js?v={{version}}"></script>
+    <script src="/js/utils/gallery.js?v={{version}}"></script>
+    <script src="/js/utils/pictures_layout.js?v={{version}}"></script>
+
+    <script src="/js/entities/post.js?v={{version}}"></script>
+
+    <script>
+        let block = document.getElementById("post")
+        let post = Post.FromData({{post}})
+        block.appendChild(post.BuildPage())
+    </script>
+
+    {% include "components/footer.html" %}
+</body>
+</html>

@@ -12,14 +12,20 @@ class Post {
 
         if (data.post_type == "picture")
             return new PicturePost(data)
+
+        throw new Error(`Unknown post type "${data.post_type}"`)
     }
 
     Build() {
         return MakeElement(null, {class: "post"}, "section")
     }
 
+    BuildPage() {
+        return this.Build()
+    }
+
     BuildText(post) {
-        MakeElement(post, {class: "post-text", innerText: this.text})
+        MakeElement(post, {class: "post-text", innerHTML: this.text})
     }
 
     BuildTime(post) {
@@ -49,6 +55,13 @@ class TextPost extends Post {
         this.BuildTime(post)
         return post
     }
+
+    BuildPage() {
+        let post = super.Build()
+        this.BuildTime(post)
+        this.BuildText(post)
+        return post
+    }
 }
 
 class PicturePost extends Post {
@@ -62,6 +75,14 @@ class PicturePost extends Post {
         this.BuildPictures(post)
         this.BuildText(post)
         this.BuildTime(post)
+        return post
+    }
+
+    BuildPage() {
+        let post = super.Build()
+        this.BuildTime(post)
+        this.BuildText(post)
+        this.BuildPictures(post)
         return post
     }
 

@@ -20,6 +20,23 @@ async def blog() -> HTMLResponse:
     return HTMLResponse(content=content)
 
 
+@router.get("/post/{post_id}")
+async def get_post(post_id: int) -> HTMLResponse:
+    post = posts_database.get_post(post_id=post_id)
+
+    if not post:
+        template = templates.get_template("errors/no_post.html")
+        return HTMLResponse(content=template.render(version=get_static_hash(), page="error"))
+
+    template = templates.get_template("entities/post.html")
+    content = template.render(
+        version=get_static_hash(),
+        page="post",
+        post=jsonable_encoder(post)
+    )
+    return HTMLResponse(content=content)
+
+
 @router.post("/search-posts")
 async def search_posts(params: PostsSearch) -> JSONResponse:
     total, posts = posts_database.search(params=params)

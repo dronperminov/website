@@ -18,7 +18,7 @@ class PicturesLayout {
             return "layout-1"
 
         if (pictures.length == 2)
-            return orientations[0] === orientations[1] ? "layout-2-row" : "layout-2-column"
+            return orientations == "hh" ? "layout-2-row" : "layout-2-column"
 
         if (pictures.length == 3) {
             if (["vvh", "vhh", "hvv", "hvh", "hhv", "hhh"].indexOf(orientations) > -1)
