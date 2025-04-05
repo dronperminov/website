@@ -27,6 +27,27 @@
     font-size: 0.8em;
 }
 
+.post-bottom {
+    display: grid;
+    grid-template-columns: 1fr 24px;
+    gap: 1em;
+    align-items: center;
+}
+
+.post-icon {
+    cursor: pointer;
+}
+
+.post-icon svg {
+    vertical-align: middle;
+    fill: var(--text-color);
+    width: 1.1em;
+}
+
+.post-icon:hover svg {
+    fill: var(--main-color);
+}
+
 .post-page .post-time {
     text-align: left;
     margin-bottom: 1em;
@@ -35,4 +56,9 @@
 .post-page .post-text {
     color: var(--text-color);
 
+}
+
+.post-page .post-pictures {
+    max-width: 500px;
+    margin: 0 auto;
 }

@@ -1,8 +1,4 @@
-{% if post.text %}
-{% set title = "%s | Dronperminov" % (post.text[:80] + ("..." if post.text|length > 80 else "")) %}
-{% else %}
 {% set title = "Пост из блога | Dronperminov" %}
-{% endif %}
 
 {% if post.post_type == "picture" %}
 {% set banner = post.pictures[0].url %}
@@ -30,6 +26,9 @@
         let block = document.getElementById("post")
         let post = Post.FromData({{post}})
         block.appendChild(post.BuildPage())
+
+        let title = document.querySelector("title")
+        title.innerText = `${post.GetTitle()} | Dronperminov`
     </script>
 
     {% include "components/footer.html" %}
