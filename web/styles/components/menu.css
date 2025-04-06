@@ -24,6 +24,18 @@ header nav a {
     text-decoration: none;
 }
 
+header nav a img {
+    width: 32px;
+    border-radius: 100%;
+    vertical-align: middle;
+}
+
+header nav a svg {
+    width: 1.2em;
+    fill: var(--text-color);
+    vertical-align: middle;
+}
+
 header nav a:first-child {
     margin-left: 0;
 }
@@ -40,9 +52,17 @@ header nav a:hover {
     color: var(--main-color);
 }
 
+header nav a:hover svg {
+    fill: var(--main-color);
+}
+
 header nav .current-page:hover {
     color: var(--text-color);
     cursor: default;
+}
+
+header nav .current-page svg {
+    fill: var(--main-color);
 }
 
 @media (max-width: 767px) {

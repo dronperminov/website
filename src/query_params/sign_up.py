@@ -17,5 +17,5 @@ class SignUp:
             password_hash=get_password_hash(self.password),
             fullname=self.fullname,
             role=UserRole.USER,
-            avatar_url="/images/profiles/default.png"
+            avatar_url="/images/profiles/default.jpg"
         )

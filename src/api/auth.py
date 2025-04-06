@@ -20,7 +20,11 @@ async def login(user: Optional[User] = Depends(get_user), back_url: str = Query(
         return RedirectResponse(url=back_url, status_code=302)
 
     template = templates.get_template("login.html")
-    return HTMLResponse(content=template.render(version=get_static_hash()))
+    content = template.render(
+        version=get_static_hash(),
+        page="login"
+    )
+    return HTMLResponse(content=content)
 
 
 @router.post("/sign-in")
