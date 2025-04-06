@@ -1,4 +1,4 @@
-{% set title = "Пост из блога | Dronperminov" %}
+{% set title = "%s%s | Dronperminov" % (post_title[:80], "..." if post_title|length > 80 else "") %}
 
 {% if post.post_type == "picture" %}
 {% set banner = post.pictures[0].url %}
@@ -19,7 +19,7 @@
         <span class="separator">›</span>
         <a href="/blog">Блог</a>
         <span class="separator">›</span>
-        <span class="current" id="breadcrumbs-current">Пост</span>
+        <span class="current">{{post_title[:50]}}{% if post_title|length > 50 %}...{% endif %}</span>
     </nav>
 
     <div class="post-page" id="post"></div>
@@ -34,12 +34,6 @@
         let block = document.getElementById("post")
         let post = Post.FromData({{post}})
         block.appendChild(post.BuildPage())
-
-        let title = document.querySelector("title")
-        title.innerText = `${post.GetTitle(80)} | Dronperminov`
-
-        let breadcrumb = document.getElementById("breadcrumbs-current")
-        breadcrumb.innerText = post.GetTitle(50)
     </script>
 
     {% include "components/footer.html" %}

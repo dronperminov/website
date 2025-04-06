@@ -32,6 +32,7 @@ async def get_post(post_id: int) -> HTMLResponse:
     content = template.render(
         version=get_static_hash(),
         page="post",
+        post_title=post.get_title(),
         post=jsonable_encoder(post)
     )
     return HTMLResponse(content=content)

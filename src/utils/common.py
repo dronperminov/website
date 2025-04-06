@@ -1,6 +1,8 @@
 import hashlib
 import os
 
+from bs4 import BeautifulSoup
+
 
 def __get_hash(filename: str) -> str:
     hash_md5 = hashlib.md5()
@@ -28,3 +30,9 @@ def get_static_hash() -> str:
 
 def get_extension(filename: str) -> str:
     return filename.rsplit(".", maxsplit=1)[-1]
+
+
+def get_plain_text(html: str) -> str:
+    soup = BeautifulSoup(html, features="html.parser")
+    text = soup.get_text()
+    return text

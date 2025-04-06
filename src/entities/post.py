@@ -4,6 +4,7 @@ from typing import List
 
 from src.entities.picture import Picture
 from src.enums import PostType
+from src.utils.common import get_plain_text
 
 
 @dataclass
@@ -12,6 +13,9 @@ class Post:
     post_type: PostType = field(init=False)
     timestamp: datetime
     text: str
+
+    def get_title(self) -> str:
+        return get_plain_text(self.text)
 
     def to_dict(self) -> dict:
         return {
