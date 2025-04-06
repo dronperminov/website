@@ -1,3 +1,31 @@
 <footer>
     <p>&copy; 2025 <b>Перминов Андрей Игоревич</b></p>
 </footer>
+
+<script src="/js/utils/fetch.js?v={{version}}"></script>
+<script>
+const TOKEN_NAME = "dronperminov_token"
+
+function Logout() {
+    localStorage.removeItem(TOKEN_NAME)
+    document.cookie = `${TOKEN_NAME}=; Max-Age=-99999999; SameSite=strict`
+    location.href="/logout"
+}
+
+function UpdateCookieToken() {
+    let token = localStorage.getItem(TOKEN_NAME)
+    if (token === null)
+        return
+
+    document.cookie = `${TOKEN_NAME}=${token}; SameSite=strict`
+
+    {% if not user %}
+    SendRequest("/validate", {}).then(response => {
+        if (response.status == SUCCESS_STATUS && response.valid)
+            location.reload()
+    })
+    {% endif %}
+}
+
+UpdateCookieToken()
+</script>

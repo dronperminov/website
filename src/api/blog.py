@@ -1,27 +1,32 @@
-from fastapi import APIRouter
+from typing import Optional
+
+from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from src import posts_database
 from src.api import templates
+from src.entities.user import User
 from src.query_params.posts_search import PostsSearch
+from src.utils.auth import get_user
 from src.utils.common import get_static_hash
 
 router = APIRouter()
 
 
 @router.get("/blog")
-async def blog() -> HTMLResponse:
+async def blog(user: Optional[User] = Depends(get_user)) -> HTMLResponse:
     template = templates.get_template("blog.html")
     content = template.render(
         version=get_static_hash(),
-        page="blog"
+        page="blog",
+        user=user
     )
     return HTMLResponse(content=content)
 
 
 @router.get("/post/{post_id}")
-async def get_post(post_id: int) -> HTMLResponse:
+async def get_post(post_id: int, user: Optional[User] = Depends(get_user)) -> HTMLResponse:
     post = posts_database.get_post(post_id=post_id)
 
     if not post:
@@ -32,6 +37,7 @@ async def get_post(post_id: int) -> HTMLResponse:
     content = template.render(
         version=get_static_hash(),
         page="post",
+        user=user,
         post_title=post.get_title(),
         post=jsonable_encoder(post)
     )

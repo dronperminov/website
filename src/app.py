@@ -7,11 +7,12 @@ from fastapi.staticfiles import StaticFiles
 from uvicorn.config import LOGGING_CONFIG
 
 from src import database
-from src.api import api, blog, projects, research
+from src.api import api, auth, blog, projects, research
 
 
 def init_routers() -> None:
     app.include_router(api.router)
+    app.include_router(auth.router)
     app.include_router(research.router)
     app.include_router(blog.router)
     app.include_router(projects.router)

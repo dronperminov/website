@@ -1,21 +1,26 @@
-from fastapi import APIRouter
+from typing import Optional
+
+from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from src import articles_database
 from src.api import templates
+from src.entities.user import User
 from src.query_params.articles_search import ArticlesSearch
+from src.utils.auth import get_user
 from src.utils.common import get_static_hash
 
 router = APIRouter()
 
 
 @router.get("/research")
-async def research() -> HTMLResponse:
+async def research(user: Optional[User] = Depends(get_user)) -> HTMLResponse:
     template = templates.get_template("research.html")
     content = template.render(
         version=get_static_hash(),
-        page="research"
+        page="research",
+        user=user
     )
     return HTMLResponse(content=content)
 

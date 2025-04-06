@@ -1,0 +1,58 @@
+.login {
+    max-width: 500px;
+    margin: 0 auto;
+    display: grid;
+    grid-auto-flow: row;
+}
+
+.login h1 {
+    text-align: center;
+}
+
+.login p {
+    text-align: center;
+    color: var(--text-color);
+    font-size: 0.9em;
+}
+
+.login .captcha-block {
+    text-align: center;
+}
+
+.g-recaptcha {
+    display: inline-block;
+    margin: 0 auto 1em auto;
+}
+
+.login p label {
+    color: var(--main-color);
+    cursor: pointer;
+    border-bottom: 1px dashed var(--main-color);
+}
+
+.login p label:hover {
+    border-bottom-style: solid;
+}
+
+#sign-type {
+    display: none;
+}
+
+#sign-type:checked ~ .sign-in, #sign-type:not(:checked) ~ .sign-up {
+    max-height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    overflow: hidden;
+    transition: 0.3s max-height, 0.3s opacity;
+}
+
+#sign-type:checked ~ h1.sign-in, #sign-type:not(:checked) ~ h1.sign-up {
+    display: none;
+}
+
+.sign-in, .sign-up {
+    opacity: 1;
+    transition: 0.3s max-height, 0.3s opacity;
+}

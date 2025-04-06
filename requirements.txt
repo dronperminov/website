@@ -2,6 +2,8 @@ beautifulsoup4
 fastapi
 Jinja2
 opencv-python
+passlib[bcrypt]
+pyjwt
 pymongo
 python-multipart
 requests

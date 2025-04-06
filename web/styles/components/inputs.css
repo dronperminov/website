@@ -1,0 +1,88 @@
+.basic-input {
+    width: 100%;
+    border: none;
+    padding: 0 0 1px 0;
+    background: transparent;
+    outline: none;
+    font-size: 1em;
+    font-family: Inter;
+    transition: border-color 150ms ease-in;
+}
+
+.basic-input:hover, .basic-input:focus {
+    transition: border-color .15s ease-in;
+    border-bottom-color: var(--main-color);
+}
+
+.basic-input:disabled, .basic-input:disabled:hover, .basic-input:disabled:focus {
+    color: var(--border-color);
+    border: none;
+}
+
+.basic-input::-webkit-outer-spin-button, .basic-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.basic-button {
+    background: var(--button-background);
+    color: var(--button-color);
+    border: none;
+    text-decoration: none;
+    padding: 0.7em 0.8em;
+    border-radius: 0.6em;
+
+    font-size: 0.95em;
+    cursor: pointer;
+    outline: none;
+    display: block;
+    text-align: center;
+    width: 100%;
+    transition: 0.3s;
+}
+
+.basic-button:hover {
+    background: var(--button-hover-background);
+    color: var(--button-hover-color);
+    transition: 0.3s;
+}
+
+.icon-input {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    grid-template-columns: 1em 1fr;
+    grid-gap: 5px 8px;
+    align-items: center;
+    border-bottom: 1px solid var(--description-color);
+    padding-bottom: 5px;
+    margin-bottom: 1em;
+}
+
+.icon-input label {
+    grid-column: 1 / span 2;
+    display: block;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+.icon-input svg {
+    width: 100%;
+    vertical-align: bottom;
+    fill: var(--description-color);
+}
+
+.icon-input input {
+    font-size: 0.9em;
+}
+
+.icon-input:has(input:focus) svg {
+    fill: var(--text-color);
+}
+
+.icon-input:has(.error-input) svg {
+    fill: var(--error-color) !important;
+}
+
+.icon-input:has(.error-input) label, .icon-input:has(.error-input) input {
+    color: var(--error-color);
+}
