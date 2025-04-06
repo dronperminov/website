@@ -16,7 +16,7 @@ header nav {
     white-space: nowrap;
 }
 
-nav a {
+header nav a {
     color: var(--text-color);
     display: inline-block;
     margin: 0 1em;
@@ -24,23 +24,23 @@ nav a {
     text-decoration: none;
 }
 
-nav a:first-child {
+header nav a:first-child {
     margin-left: 0;
 }
 
-nav a:last-child {
+header nav a:last-child {
     margin-right: 0;
 }
 
-nav .current-page span {
+header nav .current-page span {
     border-bottom: 3px solid var(--main-color);
 }
 
-nav a:hover {
+header nav a:hover {
     color: var(--main-color);
 }
 
-nav .current-page:hover {
+header nav .current-page:hover {
     color: var(--text-color);
     cursor: default;
 }

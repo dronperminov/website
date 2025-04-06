@@ -1,0 +1,31 @@
+.breadcrumbs {
+    font-size: 0.9em;
+    margin: 1em 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5em;
+    align-items: center;
+}
+
+.breadcrumbs a {
+    text-decoration: none;
+    color: var(--main-color);
+    transition: color 0.2s ease;
+}
+
+.breadcrumbs a:hover {
+    color: var(--text-color);
+}
+
+.breadcrumbs .separator {
+    color: var(--description-color);
+    user-select: none;
+}
+
+.breadcrumbs .current {
+    color: var(--description-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50vw;
+}

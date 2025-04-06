@@ -14,6 +14,14 @@
 <body>
     {% include "components/menu.html" %}
 
+    <nav class="breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a>
+        <span class="separator">›</span>
+        <a href="/blog">Блог</a>
+        <span class="separator">›</span>
+        <span class="current" id="breadcrumbs-current">Пост</span>
+    </nav>
+
     <div class="post-page" id="post"></div>
 
     <script src="/js/utils/utils.js?v={{version}}"></script>
@@ -28,7 +36,10 @@
         block.appendChild(post.BuildPage())
 
         let title = document.querySelector("title")
-        title.innerText = `${post.GetTitle()} | Dronperminov`
+        title.innerText = `${post.GetTitle(80)} | Dronperminov`
+
+        let breadcrumb = document.getElementById("breadcrumbs-current")
+        breadcrumb.innerText = post.GetTitle(50)
     </script>
 
     {% include "components/footer.html" %}

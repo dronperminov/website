@@ -20,14 +20,14 @@ class Post {
         throw new Error(`Unknown post type "${data.post_type}"`)
     }
 
-    GetTitle(maxLength = 80) {
+    GetTitle(maxLength = 0) {
         let span = MakeElement(null, {innerHTML: this.text}, "span")
+        let title = span.innerText
 
         if (maxLength == 0)
-            return span.innerText
+            return title
 
-        let title = span.innerText.substr(0, maxLength)
-        return `${title}${title.length > maxLength ? "..." : ""}`
+        return `${title.substr(0, maxLength)}${title.length > maxLength ? "..." : ""}`
     }
 
     Build() {
