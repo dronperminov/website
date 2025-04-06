@@ -66,6 +66,10 @@ header nav .current-page svg {
 }
 
 @media (max-width: 767px) {
+    body:has(header .side-menu:checked) {
+        overflow: hidden;
+    }
+
     header {
         padding: 10px 0;
         margin-bottom: 1em;
