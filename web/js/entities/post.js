@@ -21,8 +21,7 @@ class Post {
     }
 
     GetTitle(maxLength = 0) {
-        let span = MakeElement(null, {innerHTML: this.text}, "span")
-        let title = span.innerText
+        let title = this.textNode.innerText
 
         if (maxLength == 0)
             return title
@@ -45,7 +44,7 @@ class Post {
     }
 
     BuildText(post) {
-        MakeElement(post, {class: "post-text", innerHTML: this.text})
+        this.textNode = MakeElement(post, {class: "post-text", innerHTML: this.text})
     }
 
     BuildShare(post) {
@@ -54,7 +53,7 @@ class Post {
         icon.addEventListener("click", async () => {
             await navigator.share({
                 title: "Пост из блога Андрея Перминова",
-                text: this.GetTitle(),
+                text: this.GetTitle() + "\n",
                 url: `https://dronperminov.ru/post/${this.postId}`
             })
         })
@@ -84,7 +83,7 @@ class TextPost extends Post {
     Build() {
         let post = super.Build()
         this.BuildText(post)
-        this.BuildTime(post)
+        this.BuildBottom(post)
         return post
     }
 
@@ -92,7 +91,6 @@ class TextPost extends Post {
         let post = super.Build()
         this.BuildTime(post)
         this.BuildText(post)
-        this.BuildBottom(post)
         return post
     }
 }

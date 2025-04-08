@@ -2,6 +2,7 @@
 {% set description = "Личные записи из моей жизни" %}
 {% include "components/header.html" %}
 
+    <link rel="stylesheet" type="text/css" href="/styles/components/inputs.css?v={{version}}">
     <link rel="stylesheet" type="text/css" href="/styles/entities/post.css?v={{version}}">
     <link rel="stylesheet" type="text/css" href="/styles/utils/gallery.css?v={{version}}">
     <link rel="stylesheet" type="text/css" href="/styles/utils/layout.css?v={{version}}">
@@ -19,6 +20,15 @@
     <h1>Блог</h1>
     <p>На этой странице можно найти всё, что связано с моей жизнью, увлечениями (возможно, мимолётными), а также всякие полезные материалы (я верю, что и такое тут будет)!</p>
 
+    {% if user and user.role.value == "owner" %}
+    <section class="new-post">
+        <textarea class="basic-textarea" rows="5" id="new-post-text-input"></textarea>
+        <input type="file" multiple accept="image/*" id="new-post-file-input" onchange="ChangeImages()">
+        <div class="new-post-images hidden" id="new-post-images"></div>
+        <button class="basic-button" id="new-post-button" onclick="AddPost()">Добавить</button>
+    </section>
+    {% endif %}
+
     <div class="blog">
         <div class="left-panel"></div>
         <div id="posts">
@@ -34,6 +44,7 @@
     <script src="/js/utils/pictures_layout.js?v={{version}}"></script>
 
     <script src="/js/entities/post.js?v={{version}}"></script>
+    <script src="/js/inputs/text_input.js?v={{version}}"></script>
 
     <script src="/js/blog.js?v={{version}}"></script>
 
@@ -49,6 +60,10 @@
 
         let infiniteScroll = new InfiniteScroll(config)
         infiniteScroll.LoadContent()
+
+        {% if user and user.role.value == "owner" %}
+        let postTextInput = new TextInput(document.getElementById("new-post-text-input"), {empty: "Текст поста не заполнен", html: "Текст не является валидным HTML"})
+        {% endif %}
     </script>
 </body>
 </html>

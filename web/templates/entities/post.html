@@ -24,6 +24,8 @@
 
     <div class="post-page" id="post"></div>
 
+    {% include "components/footer.html" %}
+
     <script src="/js/utils/gallery.js?v={{version}}"></script>
     <script src="/js/utils/pictures_layout.js?v={{version}}"></script>
 
@@ -34,7 +36,5 @@
         let post = Post.FromData({{post}})
         block.appendChild(post.BuildPage())
     </script>
-
-    {% include "components/footer.html" %}
 </body>
 </html>
