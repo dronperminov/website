@@ -26,8 +26,23 @@ class TextInput {
             return null
         }
 
+        if (this.config.html) {
+            let parser = new DOMParser()
+            let dom = parser.parseFromString(`<p>${value}</p>`, "application/xml")
+
+            if (dom.querySelector("parsererror")) {
+                this.Error(this.config.html)
+                return null
+            }
+        }
+
         this.ClearError()
         return value
+    }
+
+    Clear() {
+        this.input.value = ""
+        this.ClearError()
     }
 
     Error(message = "") {

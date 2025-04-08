@@ -9,18 +9,34 @@
     transition: border-color 150ms ease-in;
 }
 
-.basic-input:hover, .basic-input:focus {
-    transition: border-color .15s ease-in;
-    border-bottom-color: var(--main-color);
-}
 
 .basic-input:disabled, .basic-input:disabled:hover, .basic-input:disabled:focus {
     color: var(--border-color);
-    border: none;
 }
 
 .basic-input::-webkit-outer-spin-button, .basic-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
+}
+
+.basic-textarea {
+    display: block;
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 0.4em;
+    padding: 0.3em;
+    background: transparent;
+    outline: none;
+    font-family: Inter;
+    font-size: 0.9em;
+    line-height: 1.25em;
+    transition: border-color 150ms ease-in;
+    min-height: 5.8em;
+    resize: vertical;
+}
+
+.basic-textarea:disabled, .basic-textarea:disabled:hover, .basic-textarea:disabled:focus {
+    color: var(--border-color);
+    border-color: var(--border-color);
 }
 
 .basic-button {
@@ -44,6 +60,17 @@
     background: var(--button-hover-background);
     color: var(--button-hover-color);
     transition: 0.3s;
+}
+
+.basic-button:disabled, .basic-button:hover:disabled {
+    background: var(--button-disabled-background);
+    color: var(--button-disabled-color);
+    pointer-events: none;
+}
+
+.error-input {
+    color: var(--error-color) !important;
+    border-color: var(--error-color) !important;
 }
 
 .icon-input {
@@ -83,6 +110,6 @@
     fill: var(--error-color) !important;
 }
 
-.icon-input:has(.error-input) label, .icon-input:has(.error-input) input {
+.icon-input:has(.error-input) label {
     color: var(--error-color);
 }

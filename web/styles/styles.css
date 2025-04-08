@@ -22,6 +22,9 @@
 
     --button-hover-background: linear-gradient(to right, #dd5e89c0 0%, #f7bb97c0 100%);
     --button-hover-color: #ffffff;
+
+    --button-disabled-background: #cccccc;
+    --button-disabled-color: var(--border-color);
 }
 
 @font-face {

@@ -1,7 +1,13 @@
 import hashlib
 import os
+import shutil
+from typing import List
 
 from bs4 import BeautifulSoup
+from fastapi import UploadFile
+
+from src.entities.picture import Picture
+from src.utils.images import make_preview
 
 
 def __get_hash(filename: str) -> str:
@@ -34,5 +40,42 @@ def get_extension(filename: str) -> str:
 
 def get_plain_text(html: str) -> str:
     soup = BeautifulSoup(html, features="html.parser")
+
+    for br in soup.find_all("br"):
+        br.replace_with("\n")
+
     text = soup.get_text()
+
+    lines = (line.strip() for line in text.splitlines())
+    text = "\n".join(phrase.strip() for line in lines for phrase in line.split("  "))
     return text
+
+
+def save_file(file: UploadFile, output_path: str) -> str:
+    with open(output_path, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    return output_path
+
+
+def prepare_pictures(paths: List[str], post_id: int, post_images_path: str) -> List[Picture]:
+    post_path = os.path.join(post_images_path, f"{post_id}")
+    os.makedirs(post_path)
+    pictures = []
+
+    for i, path in enumerate(paths):
+        counter = f"{i + 1}" if len(paths) > 1 else ""
+        extension = get_extension(path)
+        original_filename = f"original{counter}.{extension}"
+        preview_filename = f"preview{counter}.webp"
+
+        shutil.copy(path, os.path.join(post_path, original_filename))
+        width, height = make_preview(input_path=path, output_path=os.path.join(post_path, preview_filename))
+        pictures.append(Picture(
+            width=width,
+            height=height,
+            url=f"/images/posts/{post_id}/{original_filename}",
+            preview_url=f"/images/posts/{post_id}/{preview_filename}"
+        ))
+
+    return pictures
