@@ -17,7 +17,7 @@ function GetPostData() {
         return null
 
     let data = new FormData()
-    data.append("text", text)
+    data.append("text", text.replace(/\r?\n/gi, "<br>"))
 
     for (let image of document.getElementById("new-post-file-input").files)
         data.append("pictures", image)
