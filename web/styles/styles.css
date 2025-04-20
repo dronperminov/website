@@ -75,6 +75,18 @@ section p:last-child {
     margin-bottom: 0;
 }
 
+section ul {
+    padding-left: 16px;
+}
+
+section .paragraphs li {
+    margin-bottom: 1em;
+}
+
+section h3 + ul {
+    margin-top: -1em;
+}
+
 .link {
     color: var(--main-color);
     border-bottom: 1px dashed var(--main-color);
