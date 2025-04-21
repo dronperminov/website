@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class ArticlesSearch:
+class PapersSearch:
     query: str = ""
     order: str = "date"
     order_type: int = -1
@@ -20,4 +20,4 @@ class ArticlesSearch:
         return query
 
     def to_order(self) -> dict:
-        return {self.order: self.order_type, "article_id": 1}
+        return {self.order: self.order_type, "paper_id": 1}

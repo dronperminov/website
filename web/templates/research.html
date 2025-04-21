@@ -2,7 +2,7 @@
 {% set description = "Научные статьи и исследования, в которых я участвовал" %}
 {% include "components/header.html" %}
 
-    <link rel="stylesheet" type="text/css" href="/styles/entities/article.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/entities/paper.css?v={{version}}">
     <link rel="stylesheet" type="text/css" href="/styles/research.css?v={{version}}">
 </head>
 <body>
@@ -20,25 +20,25 @@
         <h2>Статьи</h2>
         <p>Здесь собраны все научные статьи, в написании которых я участвовал.</p>
 
-        <div id="articles">
-            <div class="articles"></div>
+        <div id="papers">
+            <div class="papers"></div>
         </div>
     </section>
 
     {% include "components/footer.html" %}
 
     <script src="/js/utils/infinite_scroll.js?v={{version}}"></script>
-    <script src="/js/entities/article.js?v={{version}}"></script>
+    <script src="/js/entities/paper.js?v={{version}}"></script>
     <script src="/js/research.js?v={{version}}"></script>
 
     <script>
         let config = {
-            blockId: "articles",
+            blockId: "papers",
             pageSize: 2,
-            url: "/search-articles",
+            url: "/search-papers",
 
-            getParams: GetArticlesSearchParams,
-            onLoad: LoadArticles
+            getParams: GetPapersSearchParams,
+            onLoad: LoadPapers
         }
 
         let infiniteScroll = new InfiniteScroll(config)

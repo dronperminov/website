@@ -5,7 +5,7 @@
 {% set banner_height = 1024 %}
 {% include "components/header.html" %}
 
-    <link rel="stylesheet" type="text/css" href="/styles/entities/article.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/entities/paper.css?v={{version}}">
     <link rel="stylesheet" type="text/css" href="/styles/index.css?v={{version}}">
 </head>
 <body>
@@ -46,21 +46,21 @@
         <p>Этот сайт — место, где я делюсь своими исследованиями, проектами, идеями и иногда мемами, которые меня зацепили. Добро пожаловать!</p>
     </section>
 
-    <section id="articles">
+    <section id="papers">
         <h2>Научные статьи</h2>
 
         <p>Так уж получилось, что я пошёл в науку, а в науке без написания статей никуда. В этом блоке показаны последние статьи, к которым я приложил свою руку.</p>
 
-        <div class="articles">
-            {% for article in articles %}
-            <div class="article">
-                <div class="article-title">
-                    {% if article.pdf_link %}<a href="{{article.pdf_link}}" target="_blank"><img class="icon" src="/images/icons/pdf.svg">{% endif %}
-                    {% if article.link %}<a href="{{article.link}}" target="_blank">{{article.title}}</a>{% else %}{{article.title}}{% endif %} ({{article.date.year}})
+        <div class="papers">
+            {% for paper in papers %}
+            <div class="paper">
+                <div class="paper-title">
+                    {% if paper.pdf_link %}<a href="{{paper.pdf_link}}" target="_blank"><img class="icon" src="/images/icons/pdf.svg">{% endif %}
+                    {% if paper.link %}<a href="{{paper.link}}" target="_blank">{{paper.title}}</a>{% else %}{{paper.title}}{% endif %} ({{paper.date.year}})
                 </div>
-                <div class="article-authors">
-                    <b class="highlight">Автор{% if article.authors|length > 1%}ы{% endif %}</b>:
-                    {% for author in article.authors %}{% if loop.index > 1 %}, {% endif %}{% if author == "Перминов А.И." %}<b>{{author}}</b>{% else %}{{author}}{% endif %}{% endfor %}
+                <div class="paper-authors">
+                    <b class="highlight">Автор{% if paper.authors|length > 1%}ы{% endif %}</b>:
+                    {% for author in paper.authors %}{% if loop.index > 1 %}, {% endif %}{% if author == "Перминов А.И." %}<b>{{author}}</b>{% else %}{{author}}{% endif %}{% endfor %}
                 </div>
             </div>
             {% endfor %}

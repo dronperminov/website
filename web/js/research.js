@@ -1,12 +1,12 @@
-function GetArticlesSearchParams() {
+function GetPapersSearchParams() {
     return {}
 }
 
-function LoadArticles(response, block) {
-    for (let article of response.articles) {
-        article = new Article(article)
-        block.appendChild(article.Build())
+function LoadPapers(response, block) {
+    for (let paper of response.papers) {
+        paper = new Paper(paper)
+        block.appendChild(paper.Build())
     }
 
-    return response.articles.length
+    return response.papers.length
 }

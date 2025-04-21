@@ -1,4 +1,4 @@
-class Article {
+class Paper {
     constructor(data) {
         this.title = data.title
         this.authors = data.authors
@@ -8,7 +8,7 @@ class Article {
     }
 
     Build() {
-        let block = MakeElement(null, {class: "article"})
+        let block = MakeElement(null, {class: "paper"})
         this.BuildTitle(block)
         this.BuildAuthors(block)
 
@@ -16,7 +16,7 @@ class Article {
     }
 
     BuildTitle(parent) {
-        let title = MakeElement(parent, {class: "article-title"})
+        let title = MakeElement(parent, {class: "paper-title"})
 
         if (this.pdfLink) {
             let link = MakeElement(title, {href: this.pdfLink, target: "_blank"}, "a")
@@ -33,7 +33,7 @@ class Article {
     }
 
     BuildAuthors(parent) {
-        let authors = MakeElement(parent, {class: "article-authors"})
+        let authors = MakeElement(parent, {class: "paper-authors"})
         MakeElement(authors, {class: "highlight", innerText: `Автор${this.authors.length > 1 ? "ы" : ""} `}, "b")
         MakeElement(authors, {innerText: ": "}, "span")
 

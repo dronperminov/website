@@ -4,8 +4,8 @@ from typing import List, Optional
 
 
 @dataclass
-class Article:
-    article_id: int
+class Paper:
+    paper_id: int
     title: str
     authors: List[str]
     date: datetime
@@ -14,7 +14,7 @@ class Article:
 
     def to_dict(self) -> dict:
         return {
-            "article_id": self.article_id,
+            "paper_id": self.paper_id,
             "title": self.title,
             "authors": self.authors,
             "date": self.date,
@@ -23,9 +23,9 @@ class Article:
         }
 
     @classmethod
-    def from_dict(cls: "Article", data: dict) -> "Article":
-        return Article(
-            article_id=data["article_id"],
+    def from_dict(cls: "Paper", data: dict) -> "Paper":
+        return Paper(
+            paper_id=data["paper_id"],
             title=data["title"],
             authors=data["authors"],
             date=data["date"],

@@ -1,11 +1,11 @@
-.articles {
+.papers {
     display: grid;
     grid-auto-flow: row;
     grid-gap: 1em;
     justify-items: center;
 }
 
-.article {
+.paper {
     padding: 0.5em;
     border-radius: 0.8em;
     background: var(--section-light-background-color);
@@ -13,19 +13,19 @@
     width: 100%;
 }
 
-.article .article-title {
+.paper .paper-title {
     margin-bottom: 0.5em;
 }
 
-.article .article-title a {
+.paper .paper-title a {
     color: var(--text-color);
     text-decoration: none;
 }
 
-.article .article-title a:hover {
+.paper .paper-title a:hover {
     color: var(--main-color);
 }
 
-.article .article-authors {
+.paper .paper-authors {
     font-size: 0.85em;
 }

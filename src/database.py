@@ -11,7 +11,7 @@ class Database:
     client: MongoClient = None
     identifiers = None
     users = None
-    articles = None
+    papers = None
     posts = None
 
     def __init__(self, mongo_url: str, database_name: str, logger: logging.Logger) -> None:
@@ -25,15 +25,15 @@ class Database:
 
         self.identifiers = database["identifiers"]
 
-        for name in ["articles", "posts"]:
+        for name in ["papers", "posts"]:
             if self.identifiers.find_one({"_id": name}) is None:
                 self.identifiers.insert_one({"_id": name, "value": 0})
 
         self.users = database["users"]
         self.users.create_index([("username", ASCENDING)], unique=True)
 
-        self.articles = database["articles"]
-        self.articles.create_index([("article_id", ASCENDING)], unique=True)
+        self.papers = database["papers"]
+        self.papers.create_index([("paper_id", ASCENDING)], unique=True)
 
         self.posts = database["posts"]
         self.posts.create_index([("post_id", ASCENDING)], unique=True)

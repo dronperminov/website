@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import HTMLResponse, JSONResponse
 
-from src import articles_database
+from src import papers_database
 from src.api import templates
 from src.entities.user import User
-from src.query_params.articles_search import ArticlesSearch
+from src.query_params.papers_search import PapersSearch
 from src.utils.auth import get_user
 from src.utils.common import get_static_hash
 
@@ -25,7 +25,7 @@ async def research(user: Optional[User] = Depends(get_user)) -> HTMLResponse:
     return HTMLResponse(content=content)
 
 
-@router.post("/search-articles")
-async def search_articles(params: ArticlesSearch) -> JSONResponse:
-    total, articles = articles_database.search(params=params)
-    return JSONResponse({"status": "success", "total": total, "articles": jsonable_encoder(articles)})
+@router.post("/search-papers")
+async def search_papers(params: PapersSearch) -> JSONResponse:
+    total, papers = papers_database.search(params=params)
+    return JSONResponse({"status": "success", "total": total, "papers": jsonable_encoder(papers)})
