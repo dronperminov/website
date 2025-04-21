@@ -11,7 +11,7 @@ header input[type="checkbox"], header .logo-hamb {
 
 header nav {
     background: var(--background-color);
-    font-size: 1.2em;
+    font-size: min(1.2em, 2.3vw);
     font-weight: bold;
     white-space: nowrap;
 }

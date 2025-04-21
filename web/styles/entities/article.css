@@ -1,0 +1,38 @@
+.article {
+    background: var(--section-background-color);
+    border-radius: 0.5em;
+    padding: 1em 1.25em;
+}
+
+.article-datetime {
+    font-size: 0.7em;
+    color: var(--description-color);
+    margin-bottom: 8px;
+}
+
+.article-title {
+    display: inline-block;
+    font-size: 1em;
+    font-weight: bold;
+    text-decoration: none;
+    color: var(--text-color);
+    margin-bottom: 1em;
+}
+
+.article-title:hover {
+    color: var(--main-color);
+}
+
+.article-tags {
+    font-size: 0.7em;
+    margin-bottom: 1em;
+}
+
+.article-preview img {
+    width: 100%;
+    border-radius: 5px;
+}
+
+.article-intro {
+    font-size: 0.9em;
+}

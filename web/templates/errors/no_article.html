@@ -1,0 +1,20 @@
+{% set title = "Запрашиваемая статья не найдена | Dronperminov" %}
+{% set banner = "/images/errors/no_article.jpg" %}
+{% set banner_width = 720 %}
+{% set banner_height = 720 %}
+{% include "components/header.html" %}
+    <link rel="stylesheet" type="text/css" href="/styles/error.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+
+    <div class="error">
+        <img src="/images/errors/no_article.jpg" alt="no article icon">
+        <h1>Статья не найдена</h1>
+
+        <p>Не удалось найти запрашиваемую статью. Возможно она был удалена или не существовала вовсе.</p>
+    </div>
+
+    {% include "components/footer.html" %}
+</body>
+</html>

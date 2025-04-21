@@ -1,0 +1,45 @@
+{% set title = "Блог | Dronperminov" %}
+{% set description = "Полезные (и не очень) статьи, которыми мне хотелось бы поделиться" %}
+{% include "components/header.html" %}
+
+    <link rel="stylesheet" type="text/css" href="/styles/entities/article.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/pages/articles.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+
+    <nav class="breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a>
+        <span class="separator">›</span>
+        <span class="current">Статьи</span>
+    </nav>
+
+    <h1>Статьи</h1>
+    <p>На этой странице можно найти различные полезные (и не очень) статьи, которыми мне очень сильно хочется поделиться с общественностью.</p>
+
+    <div id="articles">
+        <div class="articles"></div>
+    </div>
+
+    {% include "components/footer.html" %}
+
+    <script src="/js/utils/infinite_scroll.js?v={{version}}"></script>
+    <script src="/js/entities/picture.js?v={{version}}"></script>
+    <script src="/js/entities/article.js?v={{version}}"></script>
+    <script src="/js/articles.js?v={{version}}"></script>
+
+    <script>
+        let config = {
+            blockId: "articles",
+            pageSize: 10,
+            url: "/search-articles",
+
+            getParams: GetArticlesSearchParams,
+            onLoad: LoadArticles
+        }
+
+        let infiniteScroll = new InfiniteScroll(config)
+        infiniteScroll.LoadContent()
+    </script>
+</body>
+</html>

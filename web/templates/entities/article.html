@@ -1,0 +1,35 @@
+{% set title = "%s | Dronperminov" % article.title %}
+
+{% set banner = article.preview.url %}
+{% set banner_width = article.preview.width %}
+{% set banner_height = article.preview.height %}
+
+{% include "components/header.html" %}
+
+    {% include "articles/%s/styles.html" % article.link %}
+    <link rel="stylesheet" type="text/css" href="/styles/pages/article.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+
+    <nav class="breadcrumbs" aria-label="Хлебные крошки">
+        <a href="/">Главная</a>
+        <span class="separator">›</span>
+        <a href="/articles">Статьи</a>
+        <span class="separator">›</span>
+        <span class="current">{{article.title}}</span>
+    </nav>
+
+    <section class="article">
+        <h1>{{article.title}}</h1>
+
+        {% include "articles/%s/content.html" % article.link %}
+    </section>
+
+    {% include "components/footer.html" %}
+
+    <script src="/js/utils/gallery.js?v={{version}}"></script>
+    <script src="/js/utils/pictures_layout.js?v={{version}}"></script>
+    {% include "articles/%s/js.html" % article.link %}
+</body>
+</html>

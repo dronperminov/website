@@ -23,3 +23,14 @@ function MakeElement(parent = null, attributes = null, tagName = "div") {
 
     return element
 }
+
+function GetWordForm(count, forms, onlyForm = false) {
+    let index = 0
+
+    if ([0, 5, 6, 7, 8, 9].indexOf(Math.abs(count) % 10) > -1 || [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].indexOf(Math.abs(count) % 100) > -1)
+        index = 2
+    else if ([2, 3, 4].indexOf(Math.abs(count) % 10) > -1)
+        index = 1
+
+    return onlyForm ? forms[index] : `${count} ${forms[index]}`
+}

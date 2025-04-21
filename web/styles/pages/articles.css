@@ -1,0 +1,6 @@
+.articles {
+    max-width: 800px;
+    display: grid;
+    grid-auto-flow: row;
+    grid-gap: 1em;
+}

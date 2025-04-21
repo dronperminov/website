@@ -1,4 +1,4 @@
-{% set title = "%s%s | Dronperminov" % (post_title[:80], "..." if post_title|length > 80 else "") %}
+{% set title = "%s | Dronperminov" % post_title %}
 
 {% if post.post_type == "picture" %}
 {% set banner = post.pictures[0].url %}
@@ -19,7 +19,7 @@
         <span class="separator">›</span>
         <a href="/blog">Блог</a>
         <span class="separator">›</span>
-        <span class="current">{{post_title[:50]}}{% if post_title|length > 50 %}...{% endif %}</span>
+        <span class="current">{{post_title}}</span>
     </nav>
 
     <div class="post-page" id="post"></div>

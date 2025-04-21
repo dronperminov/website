@@ -3,3 +3,5 @@ __pycache__
 scripts
 web/images/posts
 web/images/projects
+web/images/articles
+web/templates/articles

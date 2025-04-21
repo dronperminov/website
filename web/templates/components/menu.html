@@ -9,6 +9,7 @@
     <nav>
         <a {% if page == "index" %}class="current-page"{% else %}href="/"{% endif %}><span>Главная</span></a>
         <a {% if page == "research" %}class="current-page"{% else %}href="/research"{% endif %}><span>Исследования</span></a>
+        <a {% if page == "articles" %}class="current-page"{% else %}href="/articles"{% endif %}><span>Статьи</span></a>
         <a {% if page == "projects" %}class="current-page"{% else %}href="/projects"{% endif %}><span>Проекты</span></a>
         <a {% if page == "blog" %}class="current-page"{% else %}href="/blog"{% endif %}><span>Блог</span></a>
         {% if user %}

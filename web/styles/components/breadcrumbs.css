@@ -2,19 +2,21 @@
     font-size: 0.9em;
     margin: 1em 0;
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 0.5em;
     align-items: center;
+    max-width: 100%;
 }
 
 .breadcrumbs a {
     text-decoration: none;
     color: var(--main-color);
     transition: color 0.2s ease;
+    white-space: nowrap;
 }
 
 .breadcrumbs a:hover {
-    color: var(--text-color);
+    text-decoration: underline;
 }
 
 .breadcrumbs .separator {
@@ -27,5 +29,4 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 50vw;
 }
