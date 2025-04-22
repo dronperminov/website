@@ -15,6 +15,10 @@ class ArticlesDatabase:
         self.database.articles.insert_one(article.to_dict())
         self.logger.info(f'Add article "{article.title}" ({article.datetime})')
 
+    def get_recent(self, count: int) -> List[Article]:
+        articles = self.database.articles.find({}).sort({"datetime": -1}).limit(count)
+        return [Article.from_dict(article) for article in articles]
+
     def get_article_by_link(self, link: str) -> Optional[Article]:
         article = self.database.articles.find_one({"link": link})
         return Article.from_dict(article) if article else None

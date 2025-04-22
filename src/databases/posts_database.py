@@ -16,7 +16,7 @@ class PostsDatabase:
         self.logger.info(f'Add post "{post.post_id}"')
 
     def get_recent(self, count: int) -> List[Post]:
-        posts = self.database.posts.find({}).sort({"date": -1}).limit(count)
+        posts = self.database.posts.find({}).sort({"timestamp": -1}).limit(count)
         return [Post.from_dict(post) for post in posts]
 
     def get_post(self, post_id: int) -> Optional[Post]:
