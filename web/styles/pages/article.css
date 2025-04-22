@@ -1,3 +1,28 @@
-.article {
-    
+.article h2 {
+    margin-top: 2em;
+}
+
+.article-center {
+    text-align: center;
+}
+
+.article text {
+    font-family: Inter;
+}
+
+.article-picture {
+    text-align: center;
+}
+
+.article-picture img {
+    max-width: min(100%, 800px);
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    border-radius: 15px;
+}
+
+@media (max-width: 767px) {
+    .article-picture img {
+        max-width: 100%;
+    }
 }

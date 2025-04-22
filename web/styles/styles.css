@@ -25,6 +25,10 @@
 
     --button-disabled-background: #cccccc;
     --button-disabled-color: var(--border-color);
+
+    --code-background-color: #fffbf6;
+    --code-border-color: #f0f0f0;
+    --code-title-color: var(--main-color);
 }
 
 @font-face {
@@ -85,6 +89,14 @@ section .paragraphs li {
 
 section h3 + ul {
     margin-top: -1em;
+}
+
+code {
+    padding: 2px 4px;
+    font-size: 0.95em;
+    background-color: #ffddd7;
+    border-radius: 5px;
+    font-family: monospace;
 }
 
 .link {

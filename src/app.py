@@ -24,6 +24,7 @@ def init_static_directories() -> None:
     app.mount("/js", StaticFiles(directory="web/js"))
     app.mount("/fonts", StaticFiles(directory="web/fonts"))
     app.mount("/images", StaticFiles(directory="web/images"))
+    app.mount("/media", StaticFiles(directory="web/media"))
 
 
 def init_logging_config() -> None:

@@ -110,6 +110,7 @@ Gallery.prototype.Close = function() {
 
 Gallery.prototype.AddPhoto = function(photo) {
     this.photos.push(photo)
+    return this.photos.length - 1
 }
 
 Gallery.prototype.ShowPhoto = function(index) {
