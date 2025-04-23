@@ -20,7 +20,7 @@ class Paper {
 
         if (this.pdfLink) {
             let link = MakeElement(title, {href: this.pdfLink, target: "_blank"}, "a")
-            MakeElement(link, {class: "icon", src: "/images/icons/pdf.svg"}, "img")
+            MakeElement(link, {class: "icon", src: "/images/icons/pdf.svg", alt: "pdf icon"}, "img")
             MakeElement(title, {innerText: " "}, "span")
         }
 

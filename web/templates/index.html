@@ -55,7 +55,7 @@
             {% for paper in papers %}
             <div class="paper">
                 <div class="paper-title">
-                    {% if paper.pdf_link %}<a href="{{paper.pdf_link}}" target="_blank"><img class="icon" src="/images/icons/pdf.svg">{% endif %}
+                    {% if paper.pdf_link %}<a href="{{paper.pdf_link}}" target="_blank"><img class="icon" src="/images/icons/pdf.svg" alt="pdf icon">{% endif %}
                     {% if paper.link %}<a href="{{paper.link}}" target="_blank">{{paper.title}}</a>{% else %}{{paper.title}}{% endif %} ({{paper.date.year}})
                 </div>
                 <div class="paper-authors">
