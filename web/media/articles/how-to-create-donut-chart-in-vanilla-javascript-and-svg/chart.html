@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Пончиковая диаграмма</title>
+</head>
+<body>
+    <svg width="210" height="210" id="chart"></svg>
+
+    <script src="chart.js"></script>
+    <script>
+        const config = {
+            svg: document.getElementById("chart"),
+
+            radius: {outer: 100, inner: 60},
+            gap: {size: 3, color: "#ffffff"}, // отступ между сегментами
+            startAngle: -90, // откуда начинается диаграмма (в градусах)
+            label: {size: 60, color: "#333"} // параметры итогового значения
+        }
+
+        const data = [
+            {value: 180, color: "#f39c12"},
+            {value: 95, color: "#2ecc71"},
+            {value: 150, color: "#e74c3c"},
+            {value: 75, color: "#3498db"}
+        ]
+
+        const chart = new Chart(config)
+        chart.plot(data)
+    </script>
+</body>
+</html>

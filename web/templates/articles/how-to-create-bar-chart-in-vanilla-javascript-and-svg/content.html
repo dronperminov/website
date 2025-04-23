@@ -1,0 +1,522 @@
+<p>В <a class="link" href="/articles/how-to-create-donut-chart-in-vanilla-javascript-and-svg">прошлой статье</a> мы пошагово разобрали, как с нуля построить пончиковую диаграмму на чистом JavaScript и SVG. Мы познакомились с элементом <code>&lt;circle&gt;</code>, параметрами <code>stroke-dasharray</code> и <code>stroke-offset</code>, и даже освежили школьную тригонометрию. В этой статье мы разберём другой тип визуализации – <b class="highlight">столбчатую диаграмму</b> (bar chart). Она идеально подходит, когда нужно сравнить значения между категориями: по месяцам, регионам, продуктам и т.д.</p>
+
+<p>Как и в прошлый раз, мы будем делать всё своими руками: без сторонних библиотек, с полным контролем над разметкой, и в удобном виде – через один класс <code>BarChart</code>.</p>
+
+<p>В этой статье вы узнаете:</p>
+
+<ul>
+    <li>как рисовать прямоугольники с нужными размерами в SVG;</li>
+    <li>как рассчитывать координаты и отступы;</li>
+    <li>как добавить подписи.</li>
+</ul>
+
+<h2>Что у нас получится в итоге</h2>
+
+<p>Прежде чем углубляться в реализацию, давай определимся, что мы хотим получить:</p>
+
+<ul>
+    <li>диаграмма с настраиваемой высотой, шириной и цветом столбцов;</li>
+    <li>столбцы с закруглёнными углами и подписями значений и меток;</li>
+    <li>подписи меток с поддержкой многострочности;</li>
+    <li>работа только с неотрицательными данными.</li>
+</ul>
+
+<div class="article-center">
+    <svg style="width: 665px; height: 340px;">
+        <rect x="5" y="241.53061224489795" width="50" height="73.46938775510203" rx="5" fill="#ffc154"></rect>
+        <text x="30" y="241.53061224489795" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">12</text>
+        <text x="30" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">январь</text>
+        <text x="30" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="60" y="198.67346938775512" width="50" height="116.3265306122449" rx="5" fill="#ffc154"></rect>
+        <text x="85" y="198.67346938775512" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">19</text>
+        <text x="85" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">февраль</text>
+        <text x="85" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="115" y="192.55102040816325" width="50" height="122.44897959183673" rx="5" fill="#ffc154"></rect>
+        <text x="140" y="192.55102040816325" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">20</text>
+        <text x="140" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">март</text>
+        <text x="140" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="170" y="168.06122448979593" width="50" height="146.93877551020407" rx="5" fill="#ffc154"></rect>
+        <text x="195" y="168.06122448979593" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">24</text>
+        <text x="195" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">апрель</text>
+        <text x="195" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="225" y="149.69387755102042" width="50" height="165.30612244897958" rx="5" fill="#ffc154"></rect>
+        <text x="250" y="149.69387755102042" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">27</text>
+        <text x="250" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">май</text>
+        <text x="250" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="280" y="149.69387755102042" width="50" height="165.30612244897958" rx="5" fill="#ffc154"></rect>
+        <text x="305" y="149.69387755102042" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">27</text>
+        <text x="305" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">июнь</text>
+        <text x="305" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="335" y="106.83673469387756" width="50" height="208.16326530612244" rx="5" fill="#ffc154"></rect>
+        <text x="360" y="106.83673469387756" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">34</text>
+        <text x="360" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">июль</text>
+        <text x="360" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="390" y="82.34693877551021" width="50" height="232.6530612244898" rx="5" fill="#ffc154"></rect>
+        <text x="415" y="82.34693877551021" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">38</text>
+        <text x="415" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">август</text>
+        <text x="415" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="445" y="15" width="50" height="300" rx="5" fill="#ffc154"></rect>
+        <text x="470" y="15" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">49</text>
+        <text x="470" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">сентябрь</text>
+        <text x="470" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="500" y="106.83673469387756" width="50" height="208.16326530612244" rx="5" fill="#ffc154"></rect>
+        <text x="525" y="106.83673469387756" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">34</text>
+        <text x="525" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">октябрь</text>
+        <text x="525" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="555" y="57.85714285714289" width="50" height="257.1428571428571" rx="5" fill="#ffc154"></rect>
+        <text x="580" y="57.85714285714289" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">42</text>
+        <text x="580" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">ноябрь</text>
+        <text x="580" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="610" y="100.71428571428572" width="50" height="214.28571428571428" rx="5" fill="#ffc154"></rect>
+        <text x="635" y="100.71428571428572" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">35</text>
+        <text x="635" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">декабрь</text>
+        <text x="635" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+    </svg>
+</div>
+
+<p>Вот пример, как будет выглядеть использование нашего класса:</p>
+
+<div class="code">
+    <div class="code-title">Пример использования класса BarChart</div>
+<pre data-lang="js">
+const config = {
+    svg: document.getElementById("bar-chart"),
+    padding: {bottom: 25, left: 5, right: 5, top: 15},
+    bar: { // параметры столбцов
+        radius: 5, // радиус загругления
+        color: "#ffc154", // цвет
+        width: 50, // ширина
+        height: 300, // высота
+        gap: 5 // отступ между столбцами
+    },
+    value: {size: 12, color: "#ffc154"}, // параметры значений
+    label: {size: 10, color: "#888"} // параметры меток
+}
+
+const data = [
+    {value: 12, label: "январь\n2024"},
+    {value: 19, label: "февраль\n2024"},
+    {value: 20, label: "март\n2024"},
+    {value: 24, label: "апрель\n2024"},
+    {value: 27, label: "май\n2024"},
+    {value: 27, label: "июнь\n2024"},
+    {value: 34, label: "июль\n2024"},
+    {value: 38, label: "август\n2024"},
+    {value: 49, label: "сентябрь\n2024"},
+    {value: 34, label: "октябрь\n2024"},
+    {value: 42, label: "ноябрь\n2024"},
+    {value: 35, label: "декабрь\n2024"}
+]
+
+const barChart = new BarChart(config)
+barChart.plot(data)
+</div>
+
+<p>Теперь давайте создадим всё это по шагам – от заготовки HTML и JS до красивой и понятной диаграммы.</p>
+
+<h2>Шаг 0. Подготовка</h2>
+
+<p>Начнём с создания двух файлов: <code>bar_chart.html</code> и <code>bar_chart.js</code>. В первом будет наша HTML-разметка и SVG-элемент, во втором – сам класс <code>BarChart</code>, который мы будем постепенно наполнять.</p>
+
+<p>Вот базовая заготовка <code>bar_chart.html</code>:</p>
+
+<div class="code">
+    <div class="code-title">Файл bar_chart.html</div>
+<pre data-lang="html">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;title&gt;Столбчатая диаграмма&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;svg id="bar-chart"&gt;&lt;/svg&gt;
+
+    &lt;script src="bar_chart.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+        // создание и управление диаграммой
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+</div>
+
+<p>Теперь создадим файл <code>bar_chart.js</code> и опишем каркас класса:</p>
+
+<div class="code">
+    <div class="code-title">Файл bar_chart.js</div>
+<pre data-lang="js">
+class BarChart {
+    constructor(config) {
+        this.svg = config.svg
+        this.padding = config.padding ?? {left: 5, right: 5, top: 15, bottom: 25}
+
+        this.bar = {
+            radius: config.bar.radius ?? 0,
+            color: config.bar.color ?? "#00bcd4",
+            width: config.bar.width ?? 40,
+            height: config.bar.height ?? 300,
+            gap: config.bar.gap ?? 5
+        }
+        this.value = {
+            size: config.value.size ?? 12,
+            color: config.value.color ?? "#333"
+        }
+        this.label = {
+            size: config.label.size ?? 12,
+            color: config.label.color ?? "#333"
+        }
+    }
+
+    plot(data) {
+        
+    }
+}
+</pre>
+</div>
+
+<p>Пока всё просто – мы подготовили класс и сохранили в нём нужные параметры из конфига. В следующем шаге займёмся самой интересной частью – рисованием прямоугольников!</p>
+
+<h2>Шаг 1. Отрисовка столбцов</h2>
+
+<p>В SVG столбцы можно нарисовать с помощью элемента <code>&lt;rect&gt;</code>. У него есть координаты <code>x</code>, <code>y</code>, а также <code>width</code> и <code>height</code>. Если ширина столбцов нам дана в конфиге, то вот остальные параметрв нужно будет рассчитать для каждого столбца на основе:</p>
+
+<ul>
+    <li>общего количества данных;</li>
+    <li>отступов (gap);</li>
+    <li>максимального значения (чтобы нормировать остальные высоты).</li>
+</ul>
+
+<p>Также нужно будет не забыть обновить размеры svg. Высота svg складывается из высоты столбцов и вертикальных отступов (<code>padding.top</code> и <code>padding.bottom</code>). Эти отступы нужны, чтобы было, куда поместить подписи значений и меток. Для расчёта ширины svg нужно умножить количество столбцов на ширину столбца с отступом и вычесть один отступ, а также не забыть прибавить горизонтальные отступы (<code>padding.left</code> и <code>padding.right</code>).</p>
+
+<p>Вот как мы можем это сделать в методе plot:</p>
+
+<div class="code">
+    <div class="code-title">Рассчёт параметров диаграммы</div>
+<pre data-lang="js">
+plot(data) {
+    let height = this.padding.top + this.bar.height + this.padding.bottom
+    let width = this.padding.left + data.length * (this.bar.width + this.bar.gap) - this.bar.gap + this.padding.right
+    let maxValue = Math.max(...data.map(item => item.value))
+
+    this.svg.style.width = `${width}px`
+    this.svg.style.height = `${height}px`
+}
+</pre>
+</div>
+
+<p>Добавим метод для добавления прямоугольника в точке (<code>x</code>, <code>y</code>) с заданной высотой:</p>
+
+<div class="code">
+    <div class="code-title">Добавление прямоугольника</div>
+<pre data-lang="js">
+addBar(x, y, height) {
+    let bar = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+    bar.setAttribute("x", x)
+    bar.setAttribute("y", y)
+    bar.setAttribute("width", this.bar.width)
+    bar.setAttribute("height", height)
+    bar.setAttribute("rx", this.bar.radius)
+    bar.setAttribute("fill", this.bar.color)
+
+    this.svg.appendChild(bar)
+}
+</pre>
+</div>
+
+
+<p>Важно не забыть, что в диаграмме прямоугольники растут снизу вверх, поэтому необходимо учесть это при его размещении:</p>
+
+<div class="code">
+    <div class="code-title">Добавление прямоугольника</div>
+<pre data-lang="js">
+plot(data) {
+    ...
+
+    for (let i = 0; i < data.length; i++) {
+        if (data[i].value == 0)
+            continue
+
+        let barHeight = data[i].value / maxValue * this.bar.height
+        let x = this.padding.left + i * (this.bar.width + this.bar.gap)
+        let y = height - this.padding.bottom - barHeight
+
+        this.addBar(x, y, barHeight)
+    }
+}
+</pre>
+</div>
+
+<p>В результате получится следующая картинка:</p>
+
+<div class="article-center">
+    <svg style="width: 665px; height: 345px;">
+        <rect x="5" y="241.53061224489795" width="50" height="73.46938775510203" rx="5" fill="#ffc154"></rect>
+        <rect x="60" y="198.67346938775512" width="50" height="116.3265306122449" rx="5" fill="#ffc154"></rect>
+        <rect x="115" y="192.55102040816325" width="50" height="122.44897959183673" rx="5" fill="#ffc154"></rect>
+        <rect x="170" y="168.06122448979593" width="50" height="146.93877551020407" rx="5" fill="#ffc154"></rect>
+        <rect x="225" y="149.69387755102042" width="50" height="165.30612244897958" rx="5" fill="#ffc154"></rect>
+        <rect x="280" y="149.69387755102042" width="50" height="165.30612244897958" rx="5" fill="#ffc154"></rect>
+        <rect x="335" y="106.83673469387756" width="50" height="208.16326530612244" rx="5" fill="#ffc154"></rect>
+        <rect x="390" y="82.34693877551021" width="50" height="232.6530612244898" rx="5" fill="#ffc154"></rect>
+        <rect x="445" y="15" width="50" height="300" rx="5" fill="#ffc154"></rect>
+        <rect x="500" y="106.83673469387756" width="50" height="208.16326530612244" rx="5" fill="#ffc154"></rect>
+        <rect x="555" y="57.85714285714289" width="50" height="257.1428571428571" rx="5" fill="#ffc154"></rect>
+        <rect x="610" y="100.71428571428572" width="50" height="214.28571428571428" rx="5" fill="#ffc154"></rect>
+    </svg>
+</div>
+
+<h2>Шаг 2. Добавляем подписи</h2>
+
+<p>Добавление подписей (как значениям, так и меткам) будем осуществлять с помощью svg элемента &lt;text&gt;. Он должен быть уже знаком вам по прошлой статье. Чтобы не дублировать код, реализуем один метод добавления текстового содержимого. Также не забудем и о том, что текст может состоять более чем из одной строки:</p>
+
+<div class="code">
+    <div class="code-title">Метод добавления подписи</div>
+<pre data-lang="js">
+addLabel(x, y, text, format, baseline) {
+    for (let line of text.split("\n")) {
+        let label = document.createElementNS('http://www.w3.org/2000/svg', "text")
+
+        label.textContent = line
+        label.setAttribute("x", x)
+        label.setAttribute("y", y)
+        label.setAttribute("dominant-baseline", baseline)
+        label.setAttribute("text-anchor", "middle")
+        label.setAttribute("fill", format.color)
+        label.setAttribute("font-size", format.size)
+
+        this.svg.appendChild(label)
+
+        y += label.getBBox().height
+    }
+}
+</pre>
+</div>
+
+<p>Теперь в том же цикле, где мы добавляли прямоугольники, добавим подписи значений наверху столбцов (при этом столбцы с нулевой высотой мы подписывать не будем), а под столбцом добавим подписи меток:</p>
+
+<div class="code">
+    <div class="code-title">Добавление подписей значений</div>
+<pre data-lang="js">
+plot(data) {
+    ...
+
+    for (let i = 0; i < data.length; i++) {
+        ...
+
+        let xc = x + this.bar.width / 2
+
+        this.addBar(x, y, barHeight)
+        this.addLabel(xc, y, `${data[i].value}`, this.value, "text-after-edge")
+        this.addLabel(xc, height - this.padding.bottom, data[i].label, this.label, "text-before-edge")
+    }
+}
+</pre>
+</div>
+
+<p>В результате получится вот такая диаграмма:</p>
+
+<div class="article-center">
+    <svg style="width: 665px; height: 340px;">
+        <rect x="5" y="241.53061224489795" width="50" height="73.46938775510203" rx="5" fill="#ffc154"></rect>
+        <text x="30" y="241.53061224489795" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">12</text>
+        <text x="30" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">январь</text>
+        <text x="30" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="60" y="198.67346938775512" width="50" height="116.3265306122449" rx="5" fill="#ffc154"></rect>
+        <text x="85" y="198.67346938775512" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">19</text>
+        <text x="85" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">февраль</text>
+        <text x="85" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="115" y="192.55102040816325" width="50" height="122.44897959183673" rx="5" fill="#ffc154"></rect>
+        <text x="140" y="192.55102040816325" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">20</text>
+        <text x="140" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">март</text>
+        <text x="140" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="170" y="168.06122448979593" width="50" height="146.93877551020407" rx="5" fill="#ffc154"></rect>
+        <text x="195" y="168.06122448979593" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">24</text>
+        <text x="195" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">апрель</text>
+        <text x="195" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="225" y="149.69387755102042" width="50" height="165.30612244897958" rx="5" fill="#ffc154"></rect>
+        <text x="250" y="149.69387755102042" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">27</text>
+        <text x="250" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">май</text>
+        <text x="250" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="280" y="149.69387755102042" width="50" height="165.30612244897958" rx="5" fill="#ffc154"></rect>
+        <text x="305" y="149.69387755102042" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">27</text>
+        <text x="305" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">июнь</text>
+        <text x="305" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="335" y="106.83673469387756" width="50" height="208.16326530612244" rx="5" fill="#ffc154"></rect>
+        <text x="360" y="106.83673469387756" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">34</text>
+        <text x="360" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">июль</text>
+        <text x="360" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="390" y="82.34693877551021" width="50" height="232.6530612244898" rx="5" fill="#ffc154"></rect>
+        <text x="415" y="82.34693877551021" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">38</text>
+        <text x="415" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">август</text>
+        <text x="415" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="445" y="15" width="50" height="300" rx="5" fill="#ffc154"></rect>
+        <text x="470" y="15" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">49</text>
+        <text x="470" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">сентябрь</text>
+        <text x="470" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="500" y="106.83673469387756" width="50" height="208.16326530612244" rx="5" fill="#ffc154"></rect>
+        <text x="525" y="106.83673469387756" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">34</text>
+        <text x="525" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">октябрь</text>
+        <text x="525" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="555" y="57.85714285714289" width="50" height="257.1428571428571" rx="5" fill="#ffc154"></rect>
+        <text x="580" y="57.85714285714289" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">42</text>
+        <text x="580" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">ноябрь</text>
+        <text x="580" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+        <rect x="610" y="100.71428571428572" width="50" height="214.28571428571428" rx="5" fill="#ffc154"></rect>
+        <text x="635" y="100.71428571428572" dominant-baseline="text-after-edge" text-anchor="middle" fill="#ffc154" font-size="12">35</text>
+        <text x="635" y="315" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">декабрь</text>
+        <text x="635" y="326" dominant-baseline="text-before-edge" text-anchor="middle" fill="#888" font-size="10">2024</text>
+    </svg>
+</div>
+
+<h2>Итого</h2>
+
+<p>Вот так, шаг за шагом, мы создали настоящую столбчатую диаграмму на чистом JavaScript и SVG – без сторонних библиотек и зависимостей. У нас получилось:</p>
+
+<ul>
+    <li>настроить размеры и отступы между столбцами;</li>
+    <li>масштабировать высоту по значению;</li>
+    <li>добавить подписи меток и значений столбцов;</li>
+</ul>
+
+<p>всё это – в виде небольшого (всего 75 строк!), понятного класса <code>BarChart</code>, с которым легко работать.</p>
+
+<p>Теперь вы можете использовать такую диаграмму где угодно: в отчётах, дашбордах или просто для визуализации данных в своих проектах. Хотите добавить анимации? Легенду? Разные цвета для разных значений? Всё в ваших руках!</p>
+
+<p>Чистый JavaScript – мощный, но при этом доступный инструмент. И теперь, надеюсь, вы увидели, насколько просто и приятно с ним работать. Если раньше он казался «сложным» или «громоздким», возможно, сейчас вы измените своё мнение.</p>
+
+<p>А главное – вся логика у вас под контролем. Вы сами управляете тем, как и что отрисовывается. И, как и в случае с <a class="link" href="/articles/how-to-create-donut-chart-in-vanilla-javascript-and-svg">пончиковой диаграммой</a>, это не просто визуализация – это результат ваших собственных усилий!</p>
+
+<div class="code code-collapsed">
+    <div class="code-title">Итоговый файл <a class="link" download href="/media/articles/{{article.link}}/bar_chart.html">bar_chart.html</a></div>
+<pre data-lang="html">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;title&gt;Столбчатая диаграмма&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;svg id="bar-chart"&gt;&lt;/svg&gt;
+
+    &lt;script src="bar_chart.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+        const config = {
+            svg: document.getElementById("bar-chart"),
+            padding: {bottom: 25, left: 5, right: 5, top: 15},
+            bar: { // параметры столбцов
+                radius: 5, // радиус загругления
+                color: "#ffc154", // цвет
+                width: 50, // ширина
+                height: 300, // высота
+                gap: 5 // отступ между столбцами
+            },
+            value: {size: 12, color: "#ffc154"}, // параметры значений
+            label: {size: 10, color: "#888"} // параметры меток
+        }
+
+        const data = [
+            {value: 12, label: "январь\n2024"},
+            {value: 19, label: "февраль\n2024"},
+            {value: 20, label: "март\n2024"},
+            {value: 24, label: "апрель\n2024"},
+            {value: 27, label: "май\n2024"},
+            {value: 27, label: "июнь\n2024"},
+            {value: 34, label: "июль\n2024"},
+            {value: 38, label: "август\n2024"},
+            {value: 49, label: "сентябрь\n2024"},
+            {value: 34, label: "октябрь\n2024"},
+            {value: 42, label: "ноябрь\n2024"},
+            {value: 35, label: "декабрь\n2024"}
+        ]
+
+        const barChart = new BarChart(config)
+        barChart.plot(data)
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+</div>
+
+<div class="code code-collapsed">
+    <div class="code-title">Итоговый файл <a class="link" download href="/media/articles/{{article.link}}/bar_chart.js">bar_chart.js</a></div>
+<pre data-lang="js">
+class BarChart {
+    constructor(config) {
+        this.svg = config.svg
+        this.padding = config.padding ?? {left: 5, right: 5, top: 15, bottom: 25}
+
+        this.bar = {
+            radius: config.bar.radius ?? 0,
+            color: config.bar.color ?? "#00bcd4",
+            width: config.bar.width ?? 40,
+            height: config.bar.height ?? 300,
+            gap: config.bar.gap ?? 5
+        }
+        this.value = {
+            size: config.value.size ?? 12,
+            color: config.value.color ?? "#333"
+        }
+        this.label = {
+            size: config.label.size ?? 12,
+            color: config.label.color ?? "#333"
+        }
+    }
+
+    plot(data) {
+        let height = this.padding.top + this.bar.height + this.padding.bottom
+        let width = this.padding.left + data.length * (this.bar.width + this.bar.gap) - this.bar.gap + this.padding.right
+        let maxValue = Math.max(...data.map(item => item.value))
+
+        this.svg.style.width = `${width}px`
+        this.svg.style.height = `${height}px`
+
+        for (let i = 0; i < data.length; i++) {
+            if (data[i].value == 0)
+                continue
+
+            let barHeight = data[i].value / maxValue * this.bar.height
+            let x = this.padding.left + i * (this.bar.width + this.bar.gap)
+            let y = height - this.padding.bottom - barHeight
+            let xc = x + this.bar.width / 2
+
+            this.addBar(x, y, barHeight)
+            this.addLabel(xc, y, `${data[i].value}`, this.value, "text-after-edge")
+            this.addLabel(xc, height - this.padding.bottom, data[i].label, this.label, "text-before-edge")
+        }
+    }
+
+    addBar(x, y, height) {
+        let bar = document.createElementNS("http://www.w3.org/2000/svg", "rect")
+        bar.setAttribute("x", x)
+        bar.setAttribute("y", y)
+        bar.setAttribute("width", this.bar.width)
+        bar.setAttribute("height", height)
+        bar.setAttribute("rx", this.bar.radius)
+        bar.setAttribute("fill", this.bar.color)
+
+        this.svg.appendChild(bar)
+    }
+
+    addLabel(x, y, text, format, baseline) {
+        for (let line of text.split("\n")) {
+            let label = document.createElementNS('http://www.w3.org/2000/svg', "text")
+
+            label.textContent = line
+            label.setAttribute("x", x)
+            label.setAttribute("y", y)
+            label.setAttribute("dominant-baseline", baseline)
+            label.setAttribute("text-anchor", "middle")
+            label.setAttribute("fill", format.color)
+            label.setAttribute("font-size", format.size)
+
+            this.svg.appendChild(label)
+
+            y += label.getBBox().height
+        }
+    }
+}
+</pre>
+</div>

@@ -1,0 +1,598 @@
+<p><b class="highlight">Круговые</b> и <b class="highlight">пончиковые</b> диаграммы – отличный способ визуализировать доли и пропорции. Их можно встретить в инфографике, дашбордах и самых разных отчётах. И хотя готовых библиотек для визуализаций сейчас предостаточно, иногда хочется сделать что-то своё – простое, лёгкое, понятное и без зависимости от фреймворков.</p>
+
+<p>В этой статье мы пошагово создадим пончиковую диаграмму (donut chart) с помощью чистого JavaScript и SVG, без использования внешних библиотек. Мы разберём:</p>
+
+<ul>
+    <li>как работает <code>stroke-dasharray</code> и <code>stroke-dashoffset</code>,</li>
+    <li>как вычислить длину дуги сегмента,</li>
+    <li>как задать отступы между секторами.</li>
+</ul>
+
+<p>И, конечно же, по ходу дела вспомним школьную формулы вроде длины окружности и даже немного тригонометрии! Да, вот она – та редкая ситуация, когда математика действительно пригодилась в жизни!</p>
+
+<h2>Что у нас получится в итоге</h2>
+
+<p>Прежде чем углубляться в код, давайте посмотрим, что мы собираемся построить:</p>
+
+<ul>
+    <li>красивая пончиковая диаграмма с разноцветными сегментами;</li>
+    <li>настраиваемый внешний и внутренний радиус;</li>
+    <li>отступы между секторами;</li>
+    <li>суммарное значение внутри диаграммы.</li>
+</ul>
+
+<div class="article-center">
+    <svg width="210" height="210">
+        <circle cx="105" cy="105" r="80" stroke="#f39c12" stroke-width="40" stroke-dasharray="180.95573684677208,321.6990877275948" stroke-dashoffset="125.66370614359172" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#2ecc71" stroke-width="40" stroke-dasharray="95.50441666912971,407.1504079052372" stroke-dashoffset="-55.29203070318035" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#e74c3c" stroke-width="40" stroke-dasharray="150.79644737231007,351.85837720205683" stroke-dashoffset="-150.79644737231007" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#3498db" stroke-width="40" stroke-dasharray="75.39822368615503,427.25660088821184" stroke-dashoffset="-301.59289474462014" fill="none"></circle>
+
+        <path d="M105 45 L105 5" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M151.23079456654736 143.24543938492138 L182.05132427757894 168.74239897486896" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M86.45898033750316 162.06339097770922 L74.09830056250527 200.10565162951536" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M56.45898033750315 69.73288486245161 L24.098300562505244 46.2214747707527" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M104.99999999999999 45 L104.99999999999999 5" stroke="#ffffff" stroke-width="3"></path>
+
+        <text x="105" y="105" dominant-baseline="central" text-anchor="middle" fill="#333" font-size="50" font-weight="bold">500</text>
+    </svg>
+</div>
+
+<p>И всё это – с помощью всего одного класса <code>Chart</code>. Вот пример того, как будет выглядеть использование этого класса:</p>
+
+<div class="code">
+    <div class="code-title">Пример использования класса Chart</div>
+<pre data-lang="js">
+const config = {
+    svg: document.getElementById("chart"),
+
+    radius: {outer: 100, inner: 60},
+    gap: {size: 3, color: "#fff"}, // отступ между сегментами
+    startAngle: -90, // откуда начинается диаграмма (в градусах)
+    label: {size: 60, color: "#333"} // параметры итогового значения
+}
+
+const data = [
+    {value: 180, color: "#f39c12"},
+    {value: 95, color: "#2ecc71"},
+    {value: 150, color: "#e74c3c"},
+    {value: 75, color: "#3498db"}
+]
+
+const chart = new Chart(config)
+chart.plot(data)
+</pre>
+</div>
+
+<p>Теперь, когда стало ясно, как будет выглядеть конечный результат, давайте разберёмся, как построить всё это шаг за шагом.</p>
+
+<h2>Шаг 0. Подготовка</h2>
+
+<p>Создадим два файла: <code>chart.html</code> и <code>chart.js</code>:</p>
+
+<ul>
+    <li>В <code>chart.html</code> мы разместим HTML-разметку и подключим скрипт <code>chart.js</code>.</li>
+    <li>В <code>chart.js</code> будет сам класс Chart, который мы постепенно будем наполнять.</li>
+</ul>
+
+<p>Вот как может выглядеть стартовый шаблон <code>chart.html</code>:</p>
+
+<div class="code">
+    <div class="code-title">Файл chart.html</div>
+<pre data-lang="html">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;title&gt;Пончиковая диаграмма&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;svg width="210" height="210" id="chart"&gt;&lt;/svg&gt;
+
+    &lt;script src="chart.js"&gt;&lt;/script&gt;
+    &lt;script&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+</div>
+
+<p>Теперь создадим файл <code>chart.js</code> и напишем шаблон класса <code>Chart</code>:</p>
+
+<div class="code">
+    <div class="code-title">Заготовка chart.js</div>
+<pre data-lang="js">
+class Chart {
+    constructor(config) {
+        this.svg = config.svg
+        this.radius = {
+            outer: config.radius.outer,
+            inner: config.radius.inner ?? 0 // если не передать внутренний радиус, то будет круговая диаграмма, а не пончиковая
+        }
+
+        this.gap = {size: config.gap.size ?? 1, color: config.gap.color ?? "#ffffff"}
+        this.startAngle = config.startAngle ?? 0
+        this.label = config.label
+    }
+
+    plot(data) {
+
+    }
+}
+</pre>
+</div>
+
+<p>Сейчас мы просто создали каркас, в котором всего лишь принимаем переданную конфигурацию. В следующем разделе мы начнём рисовать сами сегменты диаграммы. Именно там формула окружности наконец-то вступит в игру!</p>
+
+<h2>Шаг 1. Отрисовка сегментов</h2>
+
+Переходим к самому интересному – отрисовке сегментов диаграммы. Но для начала немного теории.
+
+<h3>Как вообще рисуется круг в SVG?</h3>
+
+<p>В SVG для создания окружностей используется элемент &lt;circle&gt;. Но мы не будем просто рисовать замкнутые круги – мы хотим рисовать лишь части круга, то есть сегменты. И для этого пригодится особенность SVG: можно управлять тем, сколько "пробежит" линия по окружности, с помощью параметров:</p>
+
+<ul>
+    <li><code>stroke</code>: задаёт цвет обводки окружности.</li>
+    <li><code>stroke-width</code>: задаёт толщину обводки окружности в пикселях (в нашем случае это разность между радиусами).</li>
+    <li><code>stroke-dasharray</code>: задаёт, насколько длинным будет видимая часть обводки (дуги).</li>
+    <li><code>stroke-dashoffset</code>: задаёт, с какого места по окружности начинать обводку.</li>
+</ul>
+
+<p>Чтобы превратить значения в длину дуги, нам нужно знать длину окружности. А она считается по известной формуле: <code>l = 2πR</code>. Зная длину окружности не составит труда вычислить и длину сегмента: нужно всего лишь умножить её на долю, занимаемую отрисовываемым значением. Ещё нам потребуется знать координаты центра svg, чтобы размещать в них окружности. Чтобы не перерасчитывать одни и те же значения многократно, дополним наш конструктор:</p>
+
+<div class="code">
+<pre data-lang="js">
+    <div class="code-title">Обновлённый конструктор класса Chart</div>
+constructor(config) {
+    this.svg = config.svg
+    this.radius = {
+        outer: config.radius.outer,
+        inner: config.radius.inner ?? 0
+    }
+
+    this.gap = {size: config.gap.size ?? 1, color: config.gap.color ?? "#ffffff"}
+    this.startAngle = config.startAngle ?? 0
+    this.label = config.label
+
+    // размещать окружности будем по центру svg
+    this.x = this.svg.clientWidth / 2
+    this.y = this.svg.clientHeight / 2
+
+    // обводка рисуется в обе стороны, так что нам нужен средний радиус
+    this.radius.middle = (this.radius.inner + this.radius.outer) / 2
+    this.strokeWidth = this.radius.outer - this.radius.inner
+    this.length = 2 * Math.PI * this.radius.middle
+}
+</pre>
+</div>
+
+<p>Для добавления окружностей создадим метод <code>addCircle</code>:</p>
+<div class="code">
+    <div class="code-title">Метод добавления окружностей</div>
+<pre data-lang="js">
+addCircle() {
+    let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+
+    circle.setAttribute("cx", this.x)
+    circle.setAttribute("cy", this.y)
+    circle.setAttribute("r", this.radius.middle)
+
+    circle.setAttribute("stroke-width", this.strokeWidth)
+    circle.setAttribute("fill", "none")
+
+    this.svg.appendChild(circle)
+    return circle
+}
+</pre>
+</div>
+
+<p>И наконец добавим окружности на диаграмму</p>
+
+<div class="code">
+    <div class="code-title">Добавление окружностей в диаграмму</div>
+<pre data-lang="js">
+plot(data) {
+    for (let item of data) {
+        let circle = this.addCircle()
+        circle.setAttribute("stroke", item.color)
+    }
+}
+</pre>
+</div>
+
+<p>Если добавить в <code>chart.html</code> код из самого начала статьи, то при запуске получим следующий вид:</p>
+
+<div class="article-center">
+    <svg width="210" height="210">
+        <circle cx="105" cy="105" r="80" stroke="#f39c12" stroke-width="40" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#2ecc71" stroke-width="40" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#e74c3c" stroke-width="40" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#3498db" stroke-width="40" fill="none"></circle>
+    </svg>
+</div>
+
+<p>Это пока совсем не похоже на диаграмму для четырёх элементов, но мы исправим это в следующем шаге.</p>
+
+<h2>Шаг 2. Управляем сегментами</h2>
+
+<p>Для расчёта длин сегментов, нам нужно знать доли, занимаемые каждым из переданных значений, а для этого сначала нам нужно посчитать суммарное значение, а затем поделить переданное значение на общую сумму. Рассчитав доли и длину сегмента, останется только задать свойство <code>stroke-dasharray</code> из двух значений: длину закрашенной области и длину незакрашенной (оставшаяся длина от всей окружности):</p>
+
+<div class="code">
+    <div class="code-title">Настройка размеров сегментов</div>
+<pre data-lang="js">
+plot(data) {
+    let total = data.reduce((sum, item) => sum + item.value, 0) // считаем суммарное значение
+
+    for (let item of data) {
+        let value = item.value / total // считаем долю
+        let circle = this.addCircle()
+
+        circle.setAttribute("stroke", item.color)
+        circle.setAttribute("stroke-dasharray", [value * this.length, (1 - value) * this.length])
+    }
+}
+</pre>
+</div>
+
+<p>Но погодите, у нас получилась совсем не диаграмма. Все сегменты начинаются в одном и том же месте:</p>
+<div class="article-center">
+    <svg width="210" height="210">
+        <circle cx="105" cy="105" r="80" stroke="#f39c12" stroke-width="40" stroke-dasharray="180.95573684677208,321.6990877275948" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#2ecc71" stroke-width="40" stroke-dasharray="95.50441666912971,407.1504079052372" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#e74c3c" stroke-width="40" stroke-dasharray="150.79644737231007,351.85837720205683" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#3498db" stroke-width="40" stroke-dasharray="75.39822368615503,427.25660088821184" fill="none"></circle>
+    </svg>
+</div>
+
+<p>Это произошло потому, что мы не задали начальное смещение с помощью аттрибута <code>stroke-dashoffset</code>. Чтобы его рассчитать, нам нужно знать суммарную длину уже отрисованных сегментов. Также необходимо не забыть учесть и начальный угол, переданный в конфиге:</p>
+
+<div class="code">
+    <div class="code-title">Добавление смещений для сегментов</div>
+<pre data-lang="js">
+plot(data) {
+    let total = data.reduce((sum, item) => sum + item.value, 0) // считаем суммарное значение
+    let offset = this.startAngle / 360
+
+    for (let item of data) {
+        let value = item.value / total // считаем долю
+        let circle = this.addCircle()
+
+        circle.setAttribute("stroke", item.color)
+        circle.setAttribute("stroke-dasharray", [value * this.length, (1 - value) * this.length])
+        circle.setAttribute("stroke-dashoffset", -offset * this.length)
+
+        offset += value
+    }
+}
+</pre>
+</div>
+
+<p>В итоге получим такую красивую диаграмму:</p>
+<div class="article-center">
+    <svg width="210" height="210">
+        <circle cx="105" cy="105" r="80" stroke="#f39c12" stroke-width="40" stroke-dasharray="180.95573684677208,321.6990877275948" stroke-dashoffset="125.66370614359172" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#2ecc71" stroke-width="40" stroke-dasharray="95.50441666912971,407.1504079052372" stroke-dashoffset="-55.29203070318035" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#e74c3c" stroke-width="40" stroke-dasharray="150.79644737231007,351.85837720205683" stroke-dashoffset="-150.79644737231007" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#3498db" stroke-width="40" stroke-dasharray="75.39822368615503,427.25660088821184" stroke-dashoffset="-301.59289474462014" fill="none"></circle>
+    </svg>
+</div>
+
+<p>Для удобства и единообразия управления аттрибутами окружностей, перенесём параметры <code>color</code>, <code>value</code> и <code>offset</code> внутрь метода добавления окружностей:</p>
+
+<div class="code">
+    <div class="code-title">Небольшой рефакторинг</div>
+<pre data-lang="js">
+plot(data) {
+    ...
+
+    for (let item of data) {
+        let value = item.value / total // считаем долю
+        this.addCircle(item.color, value, offset)
+        offset += value
+    }
+}
+
+addCircle(color, value, offset) {
+    let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+
+    circle.setAttribute("cx", this.x)
+    circle.setAttribute("cy", this.y)
+    circle.setAttribute("r", this.radius.middle)
+
+    circle.setAttribute("stroke", color)
+    circle.setAttribute("stroke-width", this.strokeWidth)
+    circle.setAttribute("stroke-dasharray", [value * this.length, (1 - value) * this.length])
+    circle.setAttribute("stroke-dashoffset", -offset * this.length)
+    circle.setAttribute("fill", "none")
+
+    this.svg.appendChild(circle)
+}
+</pre>
+</div>
+
+<h2>Шаг 3. Отступы</h2>
+
+<p>Сейчас сегменты идут плотно друг за другом, а параметр <code>gap</code> вовсе никак не используется. Чтобы это исправить, можно было бы уменьшать длину сегментов на величину этого отступа, однако тогда зазоры будут иметь разную ширину между внешней и внутренней дугами. Поэтому вместо этого мы добавим на местах соединения сегментов прямые линии.</p>
+
+<p>Но как узнать координаты этих линий? Внезапно здесь нам поможет школьная <b class="highlight">тригонометрия</b>. Любая точка на окружности может быть определена с помощью следующих уравнений: <code>x = x<sub>0</sub> + radius * cos(angle)</code> и <code>y = y<sub>0</sub> + radius * sin(angle)</code>.</p>
+
+<p>Для линии нам нужны две точки: начало (<code>x<sub>1</sub></code>, <code>y<sub>1</sub></code>) и конец (<code>x<sub>2</sub></code>, <code>y<sub>2</sub></code>). Началом линии будет точка на внутренней дуге, а конечной – точка на внешней дуге. Центр мы знаем – это центр svg. Остаётся понять, как найти угол. С углом на самом деле тоже всё просто: это всего лишь смещение, умноженное на <code>2π</code>.</p>
+
+<p>Соединим полученные знания:</p>
+
+<div class="code">
+    <div class="code-title">Добавление отступов</div>
+<pre data-lang="js">
+plot(data) {
+    ...
+    let offsets = [offset]
+
+    for (let item of data) {
+        ...
+        offsets.push(offset)
+    }
+
+    for (offset of offsets)
+        this.addDivider(offset)
+}
+
+addDivider(offset) {
+    let line = document.createElementNS("http://www.w3.org/2000/svg", "path")
+
+    let angle = 2 * Math.PI * offset
+    let x1 = this.x + this.radius.inner * Math.cos(angle)
+    let y1 = this.y + this.radius.inner * Math.sin(angle)
+
+    let x2 = this.x + this.radius.outer * Math.cos(angle)
+    let y2 = this.y + this.radius.outer * Math.sin(angle)
+
+    line.setAttribute("d", `M${x1} ${y1} L${x2} ${y2}`)
+    line.setAttribute("stroke", this.gap.color)
+    line.setAttribute("stroke-width", this.gap.size)
+
+    this.svg.appendChild(line)
+}
+</pre>
+</div>
+
+<p>К сожалению, чтобы корректно перекрывать соединения сегментов, необходимо сначала добавить все окружности и только затем уже линии. Зато вот какая красота у нас получилась:</p>
+
+<div class="article-center">
+    <svg width="210" height="210">
+        <circle cx="105" cy="105" r="80" stroke="#f39c12" stroke-width="40" stroke-dasharray="180.95573684677208,321.6990877275948" stroke-dashoffset="125.66370614359172" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#2ecc71" stroke-width="40" stroke-dasharray="95.50441666912971,407.1504079052372" stroke-dashoffset="-55.29203070318035" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#e74c3c" stroke-width="40" stroke-dasharray="150.79644737231007,351.85837720205683" stroke-dashoffset="-150.79644737231007" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#3498db" stroke-width="40" stroke-dasharray="75.39822368615503,427.25660088821184" stroke-dashoffset="-301.59289474462014" fill="none"></circle>
+        <path d="M105 45 L105 5" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M151.23079456654736 143.24543938492138 L182.05132427757894 168.74239897486896" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M86.45898033750316 162.06339097770922 L74.09830056250527 200.10565162951536" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M56.45898033750315 69.73288486245161 L24.098300562505244 46.2214747707527" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M104.99999999999999 45 L104.99999999999999 5" stroke="#ffffff" stroke-width="3"></path>
+    </svg>
+</div>
+
+<h2>Шаг 4. Добавляем итоговое значение</h2>
+
+<p>Остался последний и, пожалуй, самый простой шаг. Нам нужно разместить текстовый элемент в центре диаграммы. Сделаем это с помощью метода <code>addLabel</code>:</p>
+
+<div class="code">
+    <div class="code-title">Добавление общего количества</div>
+<pre data-lang="js">
+plot(data) {
+    ...
+
+    for (offset of offsets)
+        this.addDivider(offset)
+
+    this.addLabel(total)
+}
+
+addLabel(total) {
+    let label = document.createElementNS("http://www.w3.org/2000/svg", "text")
+
+    label.textContent = total
+    label.setAttribute("x", this.x)
+    label.setAttribute("y", this.y)
+    label.setAttribute("dominant-baseline", "central")
+    label.setAttribute("text-anchor", "middle")
+    label.setAttribute("fill", this.label.color)
+    label.setAttribute("font-size", this.label.size)
+    label.setAttribute("font-weight", "bold")
+
+    this.svg.appendChild(label)
+}
+</pre>
+</div>
+
+<p>Вот что у нас получилось в итоге:</p>
+
+<div class="article-center">
+    <svg width="210" height="210">
+        <circle cx="105" cy="105" r="80" stroke="#f39c12" stroke-width="40" stroke-dasharray="180.95573684677208,321.6990877275948" stroke-dashoffset="125.66370614359172" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#2ecc71" stroke-width="40" stroke-dasharray="95.50441666912971,407.1504079052372" stroke-dashoffset="-55.29203070318035" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#e74c3c" stroke-width="40" stroke-dasharray="150.79644737231007,351.85837720205683" stroke-dashoffset="-150.79644737231007" fill="none"></circle>
+        <circle cx="105" cy="105" r="80" stroke="#3498db" stroke-width="40" stroke-dasharray="75.39822368615503,427.25660088821184" stroke-dashoffset="-301.59289474462014" fill="none"></circle>
+
+        <path d="M105 45 L105 5" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M151.23079456654736 143.24543938492138 L182.05132427757894 168.74239897486896" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M86.45898033750316 162.06339097770922 L74.09830056250527 200.10565162951536" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M56.45898033750315 69.73288486245161 L24.098300562505244 46.2214747707527" stroke="#ffffff" stroke-width="3"></path>
+        <path d="M104.99999999999999 45 L104.99999999999999 5" stroke="#ffffff" stroke-width="3"></path>
+
+        <text x="105" y="105" dominant-baseline="central" text-anchor="middle" fill="#333" font-size="50" font-weight="bold">500</text>
+    </svg>
+</div>
+
+<p>Немного модифицировав конфигурацию, можно с лёгкостью получить обычную круговую диаграмму:</p>
+
+<div class="code">
+<pre data-lang="js">
+config = {
+    ...,
+
+    radius: {outer: 100, inner: 0},
+    gap: {size: 1, color: "#ffffff"}, // отступ между сегментами
+    startAngle: -90, // откуда начинается диаграмма (в градусах)
+    label: {size: 60, color: "transparent"} // параметры итогового значения,
+    ...
+}
+</pre>
+</div>
+
+<div class="article-center">
+    <svg width="210" height="210">
+        <circle cx="105" cy="105" r="50" stroke="#f39c12" stroke-width="100" stroke-dasharray="113.09733552923255,201.06192982974676" stroke-dashoffset="78.53981633974483" fill="none"></circle>
+        <circle cx="105" cy="105" r="50" stroke="#2ecc71" stroke-width="100" stroke-dasharray="59.69026041820607,254.46900494077326" stroke-dashoffset="-34.55751918948772" fill="none"></circle>
+        <circle cx="105" cy="105" r="50" stroke="#e74c3c" stroke-width="100" stroke-dasharray="94.2477796076938,219.9114857512855" stroke-dashoffset="-94.2477796076938" fill="none"></circle>
+        <circle cx="105" cy="105" r="50" stroke="#3498db" stroke-width="100" stroke-dasharray="47.1238898038469,267.0353755551324" stroke-dashoffset="-188.4955592153876" fill="none"></circle>
+        <path d="M105 105 L105 5" stroke="#ffffff" stroke-width="1"></path>
+        <path d="M105 105 L182.05132427757894 168.74239897486896" stroke="#ffffff" stroke-width="1"></path><path d="M105 105 L74.09830056250527 200.10565162951536" stroke="#ffffff" stroke-width="1"></path>
+        <path d="M105 105 L24.098300562505244 46.2214747707527" stroke="#ffffff" stroke-width="1"></path>
+        <path d="M105 105 L104.99999999999999 5" stroke="#ffffff" stroke-width="1"></path>
+        <text x="105" y="105" dominant-baseline="central" text-anchor="middle" fill="transparent" font-size="60" font-weight="bold">500</text>
+    </svg>
+</div>
+
+<h2>Итоговый код</h2>
+
+<p>В итоге, написав менее 90 строк кода, мы получили класс на чистом JS без каких-либо внешних зависимостей, да и к тому же имея полный контроль над происходящим. Всё работает прозрачно: мы сами управляем отрисовкой, цветами, размерами и логикой расчёта сегментов.</p>
+
+<p>Такая реализация легко адаптируется под любые нужды – от аналитических дашбордов до симпатичных визуализаций для личных проектов или презентаций. Хотите добавить анимацию? Легенду сбоку? Вывод процентов? Всё в ваших руках!</p>
+
+<p>Надеюсь, статья оказалась полезной, а код – понятным и вдохновляющим. Если вы до этого избегали SVG и считали его слишком «сложным» – теперь, возможно, он станет вашим новым визуальным инструментом.</p>
+
+<p>Ну и наконец… Кто бы мог подумать, что <code>2πR</code> и тригонометрия действительно пригодятся в жизни, и даже помогут построить красивые диаграммы!</p>
+
+<div class="code code-collapsed">
+    <div class="code-title">Итоговый файл <a class="link" download href="/media/articles/{{article.link}}/chart.html">chart.html</a></div>
+<pre data-lang="html">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;title&gt;Пончиковая диаграмма&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;svg width="210" height="210" id="chart"&gt;&lt;/svg&gt;
+
+    &lt;script src="chart.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+        const config = {
+            svg: document.getElementById("chart"),
+
+            radius: {outer: 100, inner: 60},
+            gap: {size: 3, color: "#ffffff"}, // отступ между сегментами
+            startAngle: -90, // откуда начинается диаграмма (в градусах)
+            label: {size: 60, color: "#333"} // параметры итогового значения
+        }
+
+        const data = [
+            {value: 180, color: "#f39c12"},
+            {value: 95, color: "#2ecc71"},
+            {value: 150, color: "#e74c3c"},
+            {value: 75, color: "#3498db"}
+        ]
+
+        const chart = new Chart(config)
+        chart.plot(data)
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+</div>
+
+<div class="code code-collapsed">
+    <div class="code-title">Итоговый файл <a class="link" download href="/media/articles/{{article.link}}/chart.js">chart.js</a></div>
+<pre data-lang="js">
+class Chart {
+    constructor(config) {
+        this.svg = config.svg
+        this.radius = {
+            outer: config.radius.outer,
+            inner: config.radius.inner ?? 0
+        }
+
+        this.gap = {size: config.gap.size ?? 1, color: config.gap.color ?? "#ffffff"}
+        this.startAngle = config.startAngle ?? 0
+        this.label = config.label
+
+        // размещать окружности будем по центру svg
+        this.x = this.svg.clientWidth / 2
+        this.y = this.svg.clientHeight / 2
+
+        // обводка рисуется в обе стороны, так что нам нужен средний радиус
+        this.radius.middle = (this.radius.inner + this.radius.outer) / 2
+        this.strokeWidth = this.radius.outer - this.radius.inner
+        this.length = 2 * Math.PI * this.radius.middle
+    }
+
+    plot(data) {
+        let total = data.reduce((sum, item) => sum + item.value, 0) // считаем суммарное значение
+        let offset = this.startAngle / 360
+        let offsets = [offset]
+
+        for (let item of data) {
+            let value = item.value / total
+            this.addCircle(item.color, value, offset)
+            offset += value
+            offsets.push(offset)
+        }
+
+        for (offset of offsets)
+            this.addDivider(offset)
+
+        this.addLabel(total)
+    }
+
+    addCircle(color, value, offset) {
+        let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle")
+
+        circle.setAttribute("cx", this.x)
+        circle.setAttribute("cy", this.y)
+        circle.setAttribute("r", this.radius.middle)
+
+        circle.setAttribute("stroke", color)
+        circle.setAttribute("stroke-width", this.strokeWidth)
+        circle.setAttribute("stroke-dasharray", [value * this.length, (1 - value) * this.length])
+        circle.setAttribute("stroke-dashoffset", -offset * this.length)
+        circle.setAttribute("fill", "none")
+
+        this.svg.appendChild(circle)
+    }
+
+    addDivider(offset) {
+        let line = document.createElementNS("http://www.w3.org/2000/svg", "path")
+
+        let angle = 2 * Math.PI * offset
+        let x1 = this.x + this.radius.inner * Math.cos(angle)
+        let y1 = this.y + this.radius.inner * Math.sin(angle)
+
+        let x2 = this.x + this.radius.outer * Math.cos(angle)
+        let y2 = this.y + this.radius.outer * Math.sin(angle)
+
+        line.setAttribute("d", `M${x1} ${y1} L${x2} ${y2}`)
+        line.setAttribute("stroke", this.gap.color)
+        line.setAttribute("stroke-width", this.gap.size)
+
+        this.svg.appendChild(line)
+    }
+
+    addLabel(total) {
+        let label = document.createElementNS("http://www.w3.org/2000/svg", "text")
+
+        label.textContent = total
+        label.setAttribute("x", this.x)
+        label.setAttribute("y", this.y)
+        label.setAttribute("dominant-baseline", "central")
+        label.setAttribute("text-anchor", "middle")
+        label.setAttribute("fill", this.label.color)
+        label.setAttribute("font-size", this.label.size)
+        label.setAttribute("font-weight", "bold")
+
+        this.svg.appendChild(label)
+    }
+}
+</pre>
+</div>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Столбчатая диаграмма</title>
+</head>
+<body>
+    <svg id="bar-chart"></svg>
+
+    <script src="bar_chart.js"></script>
+    <script>
+        const config = {
+            svg: document.getElementById("bar-chart"),
+            padding: {bottom: 25, left: 5, right: 5, top: 15},
+            bar: { // параметры столбцов
+                radius: 5, // радиус загругления
+                color: "#ffc154", // цвет
+                width: 50, // ширина
+                height: 300, // высота
+                gap: 5 // отступ между столбцами
+            },
+            value: {size: 12, color: "#ffc154"}, // параметры значений
+            label: {size: 10, color: "#888"} // параметры меток
+        }
+
+        const data = [
+            {value: 12, label: "январь\n2024"},
+            {value: 19, label: "февраль\n2024"},
+            {value: 20, label: "март\n2024"},
+            {value: 24, label: "апрель\n2024"},
+            {value: 27, label: "май\n2024"},
+            {value: 27, label: "июнь\n2024"},
+            {value: 34, label: "июль\n2024"},
+            {value: 38, label: "август\n2024"},
+            {value: 49, label: "сентябрь\n2024"},
+            {value: 34, label: "октябрь\n2024"},
+            {value: 42, label: "ноябрь\n2024"},
+            {value: 35, label: "декабрь\n2024"}
+        ]
+
+        const barChart = new BarChart(config)
+        barChart.plot(data)
+    </script>
+</body>
+</html>
