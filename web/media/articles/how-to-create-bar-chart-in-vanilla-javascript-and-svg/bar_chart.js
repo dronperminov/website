@@ -29,16 +29,16 @@ class BarChart {
         this.svg.style.height = `${height}px`
 
         for (let i = 0; i < data.length; i++) {
-            if (data[i].value == 0)
-                continue
-
             let barHeight = data[i].value / maxValue * this.bar.height
             let x = this.padding.left + i * (this.bar.width + this.bar.gap)
             let y = height - this.padding.bottom - barHeight
             let xc = x + this.bar.width / 2
 
-            this.addBar(x, y, barHeight)
-            this.addLabel(xc, y, `${data[i].value}`, this.value, "text-after-edge")
+            if (data[i].value > 0) {
+                this.addBar(x, y, barHeight)
+                this.addLabel(xc, y, `${data[i].value}`, this.value, "text-after-edge")
+            }
+
             this.addLabel(xc, height - this.padding.bottom, data[i].label, this.label, "text-before-edge")
         }
     }

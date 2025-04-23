@@ -31,7 +31,7 @@ class CodeHighlight {
     ParseJS(text) {
         let regexp = new RegExp([
             `(?<line>\\n)`,
-            `(?<whitespace>\\s+)`,
+            `(?<whitespace> +)`,
             `(?<comment>//.*|/\\*.+\\*/)`,
             `(?<keyword>\\b(if|for|while|class|const|let|var|function|return|new|this|constructor)\\b)`,
             `(?<namespace>\\b(Math|console|navigator)\\b)`,
@@ -57,7 +57,7 @@ class CodeHighlight {
             `(?<attribute_value>"[^"]*"|'[^']*')`,
             `(?<attribute>\\b[a-zA-Z_:][a-zA-Z0-9_:\\-]*\\b)(?=\\s*=)`,
             `(?<tag>\\b[a-zA-Z][a-zA-Z0-9-]*\\b)(?=[\\s>/])`,
-            `(?<whitespace>\\s+)`,
+            `(?<whitespace> +)`,
             `(?<other>[^<>"'=\\s][^<>]*)`
         ].join("|"), "g")
 
