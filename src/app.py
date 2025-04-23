@@ -3,11 +3,23 @@ from typing import AsyncContextManager
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import Response
 from fastapi.staticfiles import StaticFiles
 from uvicorn.config import LOGGING_CONFIG
 
 from src import database
 from src.api import api, articles, auth, blog, projects, research
+
+
+class CachedStaticFiles(StaticFiles):
+    def __init__(self, *args, cache_control: str, **kwargs) -> None:
+        self.cache_control = cache_control
+        super().__init__(*args, **kwargs)
+
+    def file_response(self, *args, **kwargs) -> Response:
+        response: Response = super().file_response(*args, **kwargs)
+        response.headers.setdefault("Cache-Control", self.cache_control)
+        return response
 
 
 def init_routers() -> None:
@@ -20,10 +32,10 @@ def init_routers() -> None:
 
 
 def init_static_directories() -> None:
-    app.mount("/styles", StaticFiles(directory="web/styles"))
-    app.mount("/js", StaticFiles(directory="web/js"))
-    app.mount("/fonts", StaticFiles(directory="web/fonts"))
-    app.mount("/images", StaticFiles(directory="web/images"))
+    app.mount("/styles", CachedStaticFiles(directory="web/styles", cache_control="public, max-age=31536000"))
+    app.mount("/js", CachedStaticFiles(directory="web/js", cache_control="public, max-age=31536000"))
+    app.mount("/fonts", CachedStaticFiles(directory="web/fonts", cache_control="public, max-age=31536000"))
+    app.mount("/images", CachedStaticFiles(directory="web/images", cache_control="public, max-age=31536000"))
     app.mount("/media", StaticFiles(directory="web/media"))
 
 
