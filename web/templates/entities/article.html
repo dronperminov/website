@@ -21,7 +21,11 @@
     </nav>
 
     <section class="article">
+        <time class="article-datetime" datetime="{{article.datetime}}">{{article.format_datetime()}}</time>
+
         <h1>{{article.title}}</h1>
+
+        <div class="article-tags">{% for tag in article.tags %}{% if loop.index > 1 %}, {% endif %}<span class="article-tag">{{tag}}</span>{% endfor %}</div>
 
         {% include "articles/%s/content.html" % article.link %}
     </section>

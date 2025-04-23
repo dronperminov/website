@@ -12,7 +12,7 @@ class Article {
     Build() {
         let article = MakeElement(null, {class: "article"})
 
-        MakeElement(article, {class: "article-datetime", innerText: this.FormatDatetime()})
+        MakeElement(article, {class: "article-datetime", innerText: this.FormatDatetime()}, "time")
         MakeElement(article, {class: "article-title", href: `/articles/${this.link}`, innerText: this.title}, "a")
 
         this.BuildTags(article)
@@ -51,17 +51,14 @@ class Article {
         if (delta < 60 * 24)
             return GetWordForm(Math.floor(delta / 60), ["час назад", "часа назад", "часов назад"])
 
-        let hours = `${this.datetime.getHours()}`.padStart(2, "0")
-        let minutes = `${this.datetime.getMinutes()}`.padStart(2, "0")
-
-        if (delta < 60 * 24 * 2)
-            return `вчера в ${hours}:${minutes}`
-
         const months = ["января", "февраля", "марта", "апреля", "мая", "июня", "июля", "августа", "сентября", "октября", "ноября", "декабря"]
 
         let day = `${this.datetime.getDate()}`.padStart(2, "0")
         let month = months[this.datetime.getMonth()]
         let year = this.datetime.getFullYear()
+
+        let hours = `${this.datetime.getHours()}`.padStart(2, "0")
+        let minutes = `${this.datetime.getMinutes()}`.padStart(2, "0")
         return `${day} ${month} ${year} в ${hours}:${minutes}`
     }
 }

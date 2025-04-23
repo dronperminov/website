@@ -8,6 +8,7 @@
     font-size: 0.7em;
     color: var(--description-color);
     margin-bottom: 8px;
+    display: block;
 }
 
 .article-title {
@@ -24,6 +25,7 @@
 }
 
 .article-tags {
+    color: var(--description-color);
     font-size: 0.7em;
     margin-bottom: 1em;
 }
