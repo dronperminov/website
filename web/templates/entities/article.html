@@ -11,14 +11,7 @@
 </head>
 <body>
     {% include "components/menu.html" %}
-
-    <nav class="breadcrumbs" aria-label="Хлебные крошки">
-        <a href="/">Главная</a>
-        <span class="separator">›</span>
-        <a href="/articles">Статьи</a>
-        <span class="separator">›</span>
-        <span class="current">{{article.title}}</span>
-    </nav>
+    {% include "components/breadcrumbs.html" %}
 
     <section class="article">
         <time class="article-datetime" datetime="{{article.datetime}}">{{article.format_datetime()}}</time>

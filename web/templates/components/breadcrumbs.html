@@ -1,0 +1,18 @@
+<ul class="breadcrumbs" aria-label="Хлебные крошки" itemscope itemtype="https://schema.org/BreadcrumbList">
+    {% for url, title in breadcrumbs[:-1] %}
+    <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a href="{{url}}" itemprop="item" title="{{title}}">
+            <span itemprop="name">{{title}}</span>
+            <meta itemprop="position" content="{{loop.index0}}">
+        </a>
+    </li>
+    <li class="separator">›</li>
+    {% endfor %}
+
+    <li class="current" itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <span itemprop="item" title="{{breadcrumbs[-1][1]}}">
+            <span itemprop="name">{{breadcrumbs[-1][1]}}</span>
+            <meta itemprop="position" content="{{breadcrumbs|length - 1}}">
+        </span>
+    </li>
+</ul>

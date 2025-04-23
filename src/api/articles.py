@@ -20,7 +20,8 @@ async def get_articles(user: Optional[User] = Depends(get_user)) -> HTMLResponse
     content = template.render(
         version=get_static_hash(),
         page="articles",
-        user=user
+        user=user,
+        breadcrumbs=[("/", "Главная"), ("/articles", "Статьи")]
     )
     return HTMLResponse(content=content)
 
@@ -38,7 +39,8 @@ async def get_article(article_link: str, user: Optional[User] = Depends(get_user
         version=get_static_hash(),
         page="article",
         user=user,
-        article=article
+        article=article,
+        breadcrumbs=[("/", "Главная"), ("/articles", "Статьи"), (f"/articles/{article.link}", article.title)]
     )
     return HTMLResponse(content=content)
 

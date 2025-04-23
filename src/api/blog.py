@@ -24,7 +24,8 @@ async def blog(user: Optional[User] = Depends(get_user)) -> HTMLResponse:
     content = template.render(
         version=get_static_hash(),
         page="blog",
-        user=user
+        user=user,
+        breadcrumbs=[("/", "Главная"), ("/blog", "Блог")]
     )
     return HTMLResponse(content=content)
 
@@ -37,13 +38,16 @@ async def get_post(post_id: int, user: Optional[User] = Depends(get_user)) -> HT
         template = templates.get_template("errors/no_post.html")
         return HTMLResponse(content=template.render(version=get_static_hash(), page="error", user=user))
 
+    post_title = post.get_title()
+
     template = templates.get_template("entities/post.html")
     content = template.render(
         version=get_static_hash(),
         page="post",
         user=user,
-        post_title=post.get_title(),
-        post=jsonable_encoder(post)
+        post_title=post_title,
+        post=jsonable_encoder(post),
+        breadcrumbs=[("/", "Главная"), ("/blog", "Блог"), (f"/post/{post_id}", post_title)]
     )
     return HTMLResponse(content=content)
 

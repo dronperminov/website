@@ -13,14 +13,7 @@
 </head>
 <body>
     {% include "components/menu.html" %}
-
-    <nav class="breadcrumbs" aria-label="Хлебные крошки">
-        <a href="/">Главная</a>
-        <span class="separator">›</span>
-        <a href="/blog">Блог</a>
-        <span class="separator">›</span>
-        <span class="current">{{post_title}}</span>
-    </nav>
+    {% include "components/breadcrumbs.html" %}
 
     <div class="post-page" id="post"></div>
 

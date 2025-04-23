@@ -20,7 +20,8 @@ async def research(user: Optional[User] = Depends(get_user)) -> HTMLResponse:
     content = template.render(
         version=get_static_hash(),
         page="research",
-        user=user
+        user=user,
+        breadcrumbs=[("/", "Главная"), ("/research", "Исследования")]
     )
     return HTMLResponse(content=content)
 

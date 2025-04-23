@@ -17,6 +17,7 @@ async def projects(user: Optional[User] = Depends(get_user)) -> HTMLResponse:
     content = template.render(
         version=get_static_hash(),
         page="projects",
-        user=user
+        user=user,
+        breadcrumbs=[("/", "Главная"), ("/projects", "Проекты")]
     )
     return HTMLResponse(content=content)
