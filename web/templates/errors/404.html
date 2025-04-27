@@ -1,0 +1,20 @@
+{% set title = "Запрашиваемая страница не найдена | Dronperminov" %}
+{% set banner = "/images/errors/404.jpg" %}
+{% set banner_width = 720 %}
+{% set banner_height = 720 %}
+{% include "components/header.html" %}
+    <link rel="stylesheet" type="text/css" href="/styles/error.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+
+    <div class="error">
+        <img src="/images/errors/404.jpg" alt="page 404 icon">
+        <h1>Страница не найдена</h1>
+
+        <p>Не удалось найти запрашиваемую страницу. Возможно она был удалена или не существовала вовсе. Попробуйте <a class="link" href="/">вернуться на главную</a>.</p>
+    </div>
+
+    {% include "components/footer.html" %}
+</body>
+</html>

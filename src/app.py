@@ -3,12 +3,15 @@ from typing import AsyncContextManager
 
 from fastapi import FastAPI
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import Response
+from fastapi.requests import Request
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 from uvicorn.config import LOGGING_CONFIG
 
 from src import database
-from src.api import api, articles, auth, blog, projects, research
+from src.api import api, articles, auth, blog, projects, research, templates
+from src.utils.auth import get_user
+from src.utils.common import get_static_hash
 
 
 class CachedStaticFiles(StaticFiles):
@@ -55,6 +58,19 @@ async def lifespan(_: FastAPI) -> AsyncContextManager[None]:
 
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(GZipMiddleware, minimum_size=500)
+
+
+@app.exception_handler(404)
+async def handle_error404(request: Request, _: Exception) -> HTMLResponse:
+    user = await get_user(request)
+    template = templates.get_template("errors/404.html")
+    content = template.render(
+        version=get_static_hash(),
+        user=user
+    )
+
+    return HTMLResponse(content=content, status_code=404)
+
 
 init_routers()
 init_static_directories()
