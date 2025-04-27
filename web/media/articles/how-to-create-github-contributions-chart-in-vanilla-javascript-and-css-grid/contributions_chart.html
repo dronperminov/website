@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Сетка активности в стиле GitHub</title>
+    <link rel="stylesheet" type="text/css" href="contributions_chart.css">
+</head>
+<body>
+    <div class="contributions-chart" id="contributions-chart">
+    </div>
+
+    <script type="text/javascript" src="contributions_chart.js"></script>
+    <script>
+        const config = {
+            block: document.getElementById("contributions-chart"),
+            colors: ["#eff2f5", "#aceebb", "#4ac26b", "#2da44e", "#116329"],
+            startYear: 2024,
+            startMonth: 4
+        }
+
+        const contributions = []
+
+        for (let date = new Date(2024, 3, 1); date < new Date(2025, 2, 30); date.setDate(date.getDate() + 1))
+            if (Math.random() < 0.5)
+                contributions.push({date: new Date(date), count: Math.floor(1 + Math.random() * 25)})
+
+        const contributionsChart = new ContributionsChart(config)
+        contributionsChart.plot(contributions)
+    </script>
+</body>
+</html>

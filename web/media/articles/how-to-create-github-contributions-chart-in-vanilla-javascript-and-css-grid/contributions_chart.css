@@ -1,0 +1,18 @@
+.contributions-chart {
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(8, 1fr);
+    grid-gap: 4px;
+}
+
+.contribution-cell {
+    width: 15px;
+    height: 15px;
+    border-radius: 4px;
+}
+
+.contribution-cell-weekday, .contribution-cell-month {
+    font-family: sans-serif;
+    font-size: 10px;
+    font-weight: bold;
+}
