@@ -11,6 +11,7 @@
     height: 200px;
     overflow-y: auto;
     resize: vertical;
+    max-height: max-content;
 }
 
 .code-title {
@@ -34,32 +35,70 @@
     font-size: 0.8em;
 }
 
+/* основные классы */
 .code-comment {
     color: #909090;
 }
 
-.code-keyword, .code-tag {
+.code-number {
+    color: #0b57d0;
+}
+
+.code-string {
+    color: #b3261e;
+}
+
+.code-keyword {
     font-weight: bold;
     color: #b90063;
 }
 
-.code-namespace {
-    color: #b90063;
-}
-
-.code-number, .code-attribute, .code-doctype {
-    color: #0b57d0;
-}
-
-.code-string, .code-attribute-value {
-    color: #b3261e;
-}
-
-.code-identifier {
+.code-punctuation {
     color: var(--text-color);
 }
 
-.code-operator, .code-punctuation, .code-bracket, .code-slash, .code-equals {
+/* классы для javascript */
+.code-js-namespace {
+    color: #b90063;
+}
+
+.code-js-identifier {
+    color: var(--text-color);
+}
+
+.code-js-operator {
+    color: var(--text-color);
+}
+
+/* классы для html */
+.code-html-tag {
+    font-weight: bold;
+    color: #b90063;
+}
+
+.code-html-attribute, .code-html-doctype {
+    color: #0b57d0;
+}
+
+.code-html-attribute-value {
+    color: #b3261e;
+}
+
+/* классы для css */
+.code-css-tag {
+    color: #b90063;
+    font-weight: bold;
+}
+
+.code-css-class {
+    color: #b3261e;
+}
+
+.code-css-property {
+    color: #0b57d0;
+}
+
+.code-css-pseudo {
     color: var(--text-color);
 }
 

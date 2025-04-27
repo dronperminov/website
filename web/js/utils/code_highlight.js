@@ -8,6 +8,8 @@ class CodeHighlight {
             spans = this.ParseJS(text)
         else if (lang == "html")
             spans = this.ParseHTML(text)
+        else if (lang == "css")
+            spans = this.ParseCSS(text)
 
         block.innerHTML = this.AddNewLines(spans).join("").trim()
 
@@ -34,29 +36,49 @@ class CodeHighlight {
             `(?<whitespace> +)`,
             `(?<comment>//.*|/\\*.+\\*/)`,
             `(?<keyword>\\b(if|for|while|class|const|let|var|function|return|new|this|constructor)\\b)`,
-            `(?<namespace>\\b(Math|console|navigator)\\b)`,
+            `(?<js_namespace>\\b(Math|console|navigator)\\b)`,
             `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+))`,
-            `(?<string>'[^']+'|"[^"]+"|\`[^\`]+\`)`,
-            `(?<identifier>\\b[a-zA-Z_]\\w*\\b)`,
-            `(?<operator>([=+\\-*/%<>]|==|===|<=|>=|!=|\\?\\?|\\.\\.\\.))`,
-            `(?<punctuation>[;:.,(){}\\[\\]])`,
+            `(?<string>'[^']*'|"[^"]*"|\`[^\`]*\`)`,
+            `(?<js_identifier>\\b[a-zA-Z_]\\w*\\b)`,
+            `(?<js_operator>([=+\\-*/%<>]|==|===|<=|>=|!=|\\?\\?|\\.\\.\\.))`,
+            `(?<punctuation>[;:.,?(){}\\[\\]])`,
             `(?<other>.+)`
         ].join("|"), "g")
 
-        return this.Parse(text, regexp)
+        let subparse = {
+            "string": (value) => this.ParseFormatStringJS(value)
+        }
+
+        return this.Parse(text, regexp, subparse)
+    }
+
+    ParseFormatStringJS(text) {
+        if (!text.startsWith("`") || !text.endsWith("`"))
+            return `<span class="code-string">${text}</span>`
+
+        let spans = []
+        let last = 0
+
+        for (let match of text.matchAll(/(?<=\${)([\s\S]*?)(?=})/gi)) {
+            let [fullMatch, innerScript] = match
+            spans.push(`<span class="code-string">${text.slice(last, match.index)}</span>`)
+            spans.push(...this.ParseJS(innerScript))
+            last = match.index + fullMatch.length
+        }
+
+        spans.push(`<span class="code-string">${text.slice(last)}</span>`)
+        return spans
     }
 
     ParseHTML(text) {
         let regexp = new RegExp([
             `(?<line>\\n)`,
-            `(?<doctype>(?<=<)!DOCTYPE[^>]*(?=>))`,
-            `(?<comment><!--|-->)`,
-            `(?<bracket><|>)`,
-            `(?<slash>/)`,
-            `(?<equals>=)`,
-            `(?<attribute_value>"[^"]*"|'[^']*')`,
-            `(?<attribute>\\b[a-zA-Z_:][a-zA-Z0-9_:\\-]*\\b)(?=\\s*=)`,
-            `(?<tag>\\b[a-zA-Z][a-zA-Z0-9-]*\\b)(?=[\\s>/])`,
+            `(?<html_doctype>(?<=<)!DOCTYPE[^>]*(?=>))`,
+            `(?<comment><!--.*-->)`,
+            `(?<punctuation><|>|/|=)`,
+            `(?<html_attribute_value>"[^"]*"|'[^']*')`,
+            `(?<html_attribute>\\b[a-zA-Z_:][a-zA-Z0-9_:\\-]*\\b)(?=\\s*=)`,
+            `(?<html_tag>\\b[a-zA-Z][a-zA-Z0-9-]*\\b)(?=[\\s>/])`,
             `(?<whitespace> +)`,
             `(?<other>[^<>"'=\\s][^<>]*)`
         ].join("|"), "g")
@@ -75,12 +97,36 @@ class CodeHighlight {
         return spans
     }
 
-    Parse(text, regexp) {
+    ParseCSS(text) {
+        let regexp = new RegExp([
+            `(?<line>\\n)`,
+            `(?<comment>/\\*[\\s\\S]*?\\*/)`,
+            `(?<string>"[^"]*"|'[^']*')`,
+            `(?<keyword>(!important|@[a-zA-Z][\\w-]+|var)\\b)`,
+            `(?<css_pseudo>::?[a-zA-Z0-9_-]+)(?=[^\\n]*{)`,
+            `(?<css_class>[.#][a-zA-Z0-9_-]+)(?=[^\\n]*{)`,
+            `(?<css_tag>\\b[a-zA-Z][a-zA-Z0-9_-]*\\b|\\*)(?=[^;]*{)`,
+            `(?<number>\\b\\d+(\\.\\d+)?|#[a-fA-F\\d]{6}|#[a-fA-F\\d]{3})`,
+            `(?<punctuation>[{}:;,.%>+~()\\[\\]=])`,
+            `(?<css_property>[a-zA-Z][a-zA-Z0-9_-]*)(?=\\s*:)`,
+            `(?<css_identifier>[a-zA-Z_-][a-zA-Z0-9_-]*)`,
+            `(?<whitespace>\\s+)`,
+            `(?<other>.+)`
+        ].join("|"), "g")
+
+        return this.Parse(text, regexp)
+    }
+
+    Parse(text, regexp, subparse = null) {
         let spans = []
 
         for (let match of text.matchAll(regexp)) {
             let token = this.MatchToToken(match)
-            spans.push(token.type == "line" ? "\n" : `<span class="code-${token.type}">${token.value}</span>`)
+
+            if (subparse && token.type in subparse)
+                spans.push(...subparse[token.type](token.value))
+            else
+                spans.push(token.type == "line" ? "\n" : `<span class="code-${token.type}">${token.value}</span>`)
         }
 
         return spans
@@ -89,7 +135,7 @@ class CodeHighlight {
     MatchToToken(match) {
         for (let [type, value] of Object.entries(match.groups))
             if (value)
-                return {type: type.replace("_", "-"), value: value.replace("<", "&lt;").replace(">", "&gt;")}
+                return {type: type.replace(/_/g, "-"), value: value.replace("<", "&lt;").replace(">", "&gt;")}
 
         return null
     }
