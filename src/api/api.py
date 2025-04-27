@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, Response
 
 from src import articles_database, papers_database, posts_database
 from src.api import templates
@@ -48,3 +48,8 @@ async def get_sitemap() -> Response:
         sitemap.add_url(url=f"post/{post.post_id}", last_modified=post.timestamp, priority=0.6)
 
     return Response(content=sitemap.content(), media_type="application/xml")
+
+
+@router.get("/robots.txt")
+def get_robots() -> FileResponse:
+    return FileResponse("web/templates/robots.txt")
