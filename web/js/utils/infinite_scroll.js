@@ -10,15 +10,16 @@ class InfiniteScroll {
         this.block = this.parent.children[0]
         this.loader = this.BuildLoader(this.parent)
 
-        this.pageSize = config.pageSize || 10
-        this.offset = config.offset || 100
-        this.maxHeight = config.maxHeight || 0
+        this.page = config.page ?? 0
+        this.pageSize = config.pageSize ?? 10
+        this.offset = config.offset ?? 100
+        this.maxHeight = config.maxHeight ?? 0
+        this.status = INfINITE_SCROLL_INITIAL_STATUS
 
         this.url = config.url
-        this.getParams = config.getParams || null
+        this.getParams = config.getParams ?? null
         this.onLoad = config.onLoad
 
-        this.Reset()
         this.InitEvents()
     }
 
