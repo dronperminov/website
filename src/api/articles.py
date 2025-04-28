@@ -9,7 +9,7 @@ from src.api import templates
 from src.entities.user import User
 from src.query_params.articles_search import ArticlesSearch
 from src.utils.auth import get_user
-from src.utils.common import get_static_hash
+from src.utils.common import get_plain_text, get_static_hash
 
 router = APIRouter()
 
@@ -40,6 +40,7 @@ async def get_article(article_link: str, user: Optional[User] = Depends(get_user
         page="article",
         user=user,
         article=article,
+        description=get_plain_text(article.intro),
         breadcrumbs=[("/", "Главная"), ("/articles", "Статьи"), (f"/articles/{article.link}", article.title)]
     )
     return HTMLResponse(content=content)

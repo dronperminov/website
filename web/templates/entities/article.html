@@ -13,14 +13,30 @@
     {% include "components/menu.html" %}
     {% include "components/breadcrumbs.html" %}
 
-    <section class="article">
-        <time class="article-datetime" datetime="{{article.datetime}}">{{article.format_datetime()}}</time>
+    <section>
+        <article itemscope itemtype="http://schema.org/Article">
+            <meta itemprop="url" content="/articles/{{article.link}}" />
+            <meta itemprop="inLanguage" content="ru-RU" />
 
-        <h1>{{article.title}}</h1>
+            <div class="author" itemprop="author" itemscope itemtype="http://schema.org/Person">
+                <a href="/"><img src="/images/profiles/dronperminov.jpg"></a>
+                <a class="link" href="/" itemprop="url"><span itemprop="name">dronperminov</span></a>
+            </div>
 
-        <div class="article-tags">{% for tag in article.tags %}{% if loop.index > 1 %}, {% endif %}<span class="article-tag">{{tag}}</span>{% endfor %}</div>
+            <time itemprop="datePublished" content="{{article.datetime.strftime('%Y-%m-%dT%H:%M:00+00:00')}}" datetime="{{article.datetime}}">{{article.format_datetime()}}</time>
 
-        {% include "articles/%s/content.html" % article.link %}
+            <h1 itemprop="headline name">{{article.title}}</h1>
+
+            <div class="tags">{% for tag in article.tags %}{% if loop.index > 1 %}, {% endif %}<span class="tag">{{tag}}</span>{% endfor %}</div>
+
+            <div class="preview" itemprop="image" itemscope itemtype="http://schema.org/ImageObject">
+                <img itemprop="url contentUrl" src="{{article.preview.url}}" alt="{{article.title}}" />
+            </div>
+
+            <div itemprop="articleBody">
+            {% include "articles/%s/content.html" % article.link %}
+            </div>
+        </article>
     </section>
 
     {% include "components/footer.html" %}
