@@ -10,33 +10,47 @@ class Article {
     }
 
     Build() {
-        let article = MakeElement(null, {class: "article"})
+        let article = MakeElement(null, {itemscope: "", itemtype: "http://schema.org/Article"}, "article")
 
-        MakeElement(article, {class: "article-datetime", innerText: this.FormatDatetime()}, "time")
-        MakeElement(article, {class: "article-title", href: `/articles/${this.link}`, innerText: this.title}, "a")
+        MakeElement(article, {itemprop: "url", content: `/articles/${this.link}`}, "meta")
+        MakeElement(article, {itemprop: "inLanguage", content: "ru-RU"}, "meta")
+
+        this.BuildAuthor(article)
+        MakeElement(article, {class: "datetime", innerText: this.FormatDatetime(), itemprop: "datePublished", content: this.datetime.toISOString()}, "time")
+        MakeElement(article, {class: "title", href: `/articles/${this.link}`, innerText: this.title, itemprop: "headline name"}, "a")
 
         this.BuildTags(article)
         this.BuildPreview(article)
 
-        MakeElement(article, {class: "article-intro", innerHTML: this.intro})
+        MakeElement(article, {class: "intro", innerHTML: this.intro})
         return article
     }
 
+    BuildAuthor(parent) {
+        let author = MakeElement(parent, {class: "author", itemprop: "author", itemscope: "", itemtype: "http://schema.org/Person"})
+
+        let avatarLink = MakeElement(author, {href: "/"}, "a")
+        MakeElement(avatarLink, {src: "/images/profiles/dronperminov.jpg", alt: "dronperminov avatar"}, "img")
+
+        let usernameLink = MakeElement(author, {class: "link", href: "/", itemprop: "url"}, "a")
+        MakeElement(usernameLink, {itemprop: "name", innerText: "dronperminov"}, "span")
+    }
+
     BuildTags(parent) {
-        let tags = MakeElement(parent, {class: "article-tags"})
+        let tags = MakeElement(parent, {class: "tags"})
 
         for (let tag of this.tags) {
             if (tags.children.length > 0)
                 MakeElement(tags, {innerText: ", "}, "span")
 
-            MakeElement(tags, {class: "article-tag", innerText: tag}, "span") // TODO: make link
+            MakeElement(tags, {class: "tag", innerText: tag}, "span") // TODO: make link
         }
     }
 
     BuildPreview(parent) {
-        let preview = MakeElement(parent, {class: "article-preview"})
+        let preview = MakeElement(parent, {class: "preview", itemprop: "image", itemscope: "", itemtype: "http://schema.org/ImageObject"})
         let link = MakeElement(preview, {href: `/articles/${this.link}`}, "a")
-        MakeElement(link, {src: this.preview.previewUrl}, "img")
+        MakeElement(link, {src: this.preview.previewUrl, itemprop: "url contentUrl", alt: this.title}, "img")
     }
 
     FormatDatetime() {

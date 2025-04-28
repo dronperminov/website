@@ -14,7 +14,6 @@ article p + ul {
     margin-top: -0.75em;
 }
 
-
 article time {
     font-size: 0.75em;
     color: var(--description-color);

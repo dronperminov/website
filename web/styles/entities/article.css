@@ -1,17 +1,37 @@
-.article {
+article {
     background: var(--section-background-color);
     border-radius: 0.5em;
     padding: 1em 1.25em;
 }
 
-.article-datetime {
+article .author {
+    display: inline-block;
+    font-size: 0.7em;
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+article .author .link {
+    border-bottom: none;
+    color: var(--text-color);
+}
+
+article .author img {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+article time {
     font-size: 0.7em;
     color: var(--description-color);
     margin-bottom: 8px;
-    display: block;
+    display: inline-block;
 }
 
-.article-title {
+article .title {
     display: inline-block;
     font-size: 1em;
     font-weight: bold;
@@ -20,21 +40,21 @@
     margin-bottom: 1em;
 }
 
-.article-title:hover {
+article .title:hover {
     color: var(--main-color);
 }
 
-.article-tags {
+article .tags {
     color: var(--description-color);
     font-size: 0.7em;
     margin-bottom: 1em;
 }
 
-.article-preview img {
+article .preview img {
     width: 100%;
     border-radius: 5px;
 }
 
-.article-intro {
+article .intro {
     font-size: 0.9em;
 }
