@@ -9,7 +9,7 @@ class ContributionsChart {
         const year = config.startYear ?? new Date().getFullYear()
         const month = config.startMonth ?? 1
         this.startDate = new Date(year, month - 1, 1)
-        this.endDate = new Date(year + 1, month - 1, 0)
+        this.endDate = new Date(year + 1, month - 1, 1)
     }
 
     plot(contributions) {
