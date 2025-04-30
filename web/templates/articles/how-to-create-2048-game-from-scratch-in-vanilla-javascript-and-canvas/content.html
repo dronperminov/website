@@ -1,0 +1,802 @@
+<p>Игра <b class="highlight">2048</b> – культовая браузерная головоломка, покорившая интернет своей простотой, увлекательным геймплеем и невероятно лаконичной реализацией. В этой статье мы шаг за шагом создадим собственную версию 2048 с нуля – на <b class="highlight">чистом Javascript</b>, без единой библиотеки, используя <b class="highlight">Canvas API</b> для отрисовки.</p>
+
+<p>В процессе вы научитесь:</p>
+
+<ul>
+    <li>эффективно <b class="highlight">работать с массивами</b> и реализовывать механику объединения блоков,</li>
+    <li>рисовать интерфейс и игровое поле с помощью <b class="highlight">Canvas API</b>,</li>
+    <li>обрабатывать <b class="highlight">нажатия клавиш</b> и динамически управлять состоянием игры.</li>
+</ul>
+
+<p>Этот проект подойдёт как начинающим, так и более опытным разработчикам. Он поможет углубиться в механику рендеринга на Canvas, управление игровым состоянием и взаимодействие с пользователем. В результате вы получите полностью рабочую игру 2048, написанную с нуля своими руками – отличную демонстрацию практических навыков в JavaScript.</p>
+
+<p>Готовы? Поехали!</p>
+
+<h2>Подготовка</h2>
+
+<p>Первым делом создадим html заготовку: добавим <code>canvas</code>, подключим <code>game2048.js</code> скрипт и создадим объект класса с нашей игрой:</p>
+
+<div class="code">
+    <div class="code-title">Файл game2048.html</div>
+<pre data-lang="html">
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;title&gt;Игра 2048&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;canvas id="canvas"&gt;&lt;/canvas&gt;
+
+    &lt;script type="text/javascript" src="game2048.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+        const config = {
+            canvas: document.getElementById("canvas"),
+            n: 4, // размер поля 4x4
+            cellSize: 100, // размер ячеек в пикселях
+            border: 6, // толщина стенок между ячейками
+            scoreHeight: 75 // высота области для отрисовки текущего счёта
+        }
+
+        const game = new Game2048(config) // создаём экземпляр класса с игрой
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+</div>
+
+<p>Для простоты отрисовки наша игра будет выглядеть следующим образом: в верхней части холста по центру будет отрисовываться текущий счёт, а ниже будет квадратное поле из nxn ячеек. Для начала запомним переданные параметры в конфигурации внутри класса:</p>
+
+<div class="code">
+    <div class="code-title">Файл game2048.js</div>
+<pre data-lang="js">
+class Game2048 {
+    constructor(config) {
+        this.n = config.n ?? 4 // размер поля
+        this.cellSize = config.cellSize ?? 100 // размер ячеек в пикселях
+        this.scoreHeight = config.scoreHeight ?? 75 // размер области для отрисовки счёта
+        this.border = config.border ?? 5 // толщина стенок
+        this.fieldSize = this.n * (this.cellSize + this.border) + this.border // размер поля в пикселях
+
+        // ширина холста совпадает с размером поля, а высота складывается из размера поля и области со счётом
+        this.canvas = config.canvas
+        this.canvas.width = this.fieldSize
+        this.canvas.height = this.scoreHeight + this.fieldSize
+
+        // цвета различных игровых объектов
+        this.colors = {
+            score: "#bdaca0",
+            field: "#bdaca0",
+            gameOver: "#eee4caba",
+            cells: [
+                "#cdc2b3", "#efe5da", "#ece0c8", "#f0b17d", "#f19867",
+                "#f07e63", "#f46141", "#eacf78", "#edcd66", "#ecc75b",
+                "#e8c256", "#e9be4c", "#fd3f3f", "#fe2222", "#000000"
+            ]
+        }
+
+        this.score = 0 // текущий счёт
+    }
+}
+</pre>
+</div>
+
+<h2>Создание поля</h2>
+
+<p>Хотя игровое поле логически двумерное, мы будем хранить его в одномерном массиве <code>field</code> – это упростит реализацию сдвигов и других операций. При необходимости координаты <code>(i, j)</code> можно превратить в индекс с помощью формулы: <code>index = i * n + j</code>, где <code>n</code> – размер игрового поля:</p>
+
+<div class="code">
+<pre class="code-no-lines">
+i \ j |  0    1    2    3
+------+----+----+----+----+
+   0  |  0 |  1 |  2 |  3 |
+      +----+----+----+----+
+   1  |  4 |  5 |  6 |  7 |
+      +----+----+----+----+
+   2  |  8 |  9 | 10 | 11 |
+      +----+----+----+----+
+   3  | 12 | 13 | 14 | 15 |
+      +----+----+----+----+
+</pre>
+</div>
+
+<p>Значениями массива будут степени двойки, причём пустые ячейки будут иметь нулевое значение. Таким образом изначально все клетки поля будут иметь нулевое значение. Для создания такого массива воспользуемся методом <code>fill</code> с нулевым значением:</p>
+
+<div class="code">
+    <div class="code-title">Создание игрового поля</div>
+<pre data-lang="js">
+constructor(config) {
+    ...
+    this.field = new Array(this.n * this.n).fill(0) // создаём пустое поле
+}
+</pre>
+</div>
+
+<h2>Отрисовка игрового состояния</h2>
+
+<p>Чтобы воспользоваться графическими примитивами Canvas API, необходимо получить так называемый графический контекст у холста с помощью метода <code>getContext("2d")</code>. Всю отрисовку будем производить в методе <code>draw</code>, в которм нам необходимо сделать следующее:</p>
+
+<ul>
+    <li>очистить <code>canvas</code> с помощью метода <code>ctx.clearRect</code>,</li>
+    <li>нарисовать текущий счёт с помощью вызова <code>ctx.fillText</code> в методе <code>drawScore</code>,</li>
+    <li>нарисовать поле и ячейки с помощью вызовов <code>ctx.fillRect</code> в методе <code>drawBoard</code>.</li>
+</ul>
+
+<div class="code">
+    <div class="code-title">Отрисовка состояния игры</div>
+<pre data-lang="js">
+constructor(config) {
+    ...
+    this.ctx = this.canvas.getContext("2d")
+
+    this.field = new Array(this.n * this.n).fill(0)
+
+    this.draw() // отрисовываем поле
+}
+
+// отрисовка состояния игры
+draw() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height) // очищаем холст
+
+    this.drawScore() // рисуем текущий счёт
+    this.drawBoard() // рисуем игровое поле
+}
+
+// отрисовка текущего счёта по центру отведённой области
+drawScore() {
+    this.ctx.textAlign = "center"
+    this.ctx.textBaseline = "middle"
+    this.ctx.font = `${this.cellSize / 2}px Arial`
+    this.ctx.fillStyle = this.colors.score
+    this.ctx.fillText(`Score: ${this.score}`, this.fieldSize / 2, this.scoreHeight / 2)
+}
+
+// отрисовка поля
+drawBoard() {
+    // рисуем прямоугольник с цветом поля
+    this.ctx.fillStyle = this.colors.field
+    this.ctx.fillRect(0, this.scoreHeight, this.fieldSize, this.fieldSize)
+
+    // отрисовываем каждую ячейку поля
+    for (let i = 0; i &lt; this.n; i++)
+        for (let j = 0; j &lt; this.n; j++)
+            this.drawCell(i, j)
+}
+
+// отрисовка одной ячейки
+drawCell(i, j) {
+    const value = this.field[i * this.n + j]
+    const x = this.border + j * (this.cellSize + this.border)
+    const y = this.scoreHeight + this.border + i * (this.cellSize + this.border)
+
+    // закрашиваем прямоугольик цветом выбранной ячейки
+    this.ctx.fillStyle = this.colors.cells[Math.min(value, this.colors.cells.length - 1)]
+    this.ctx.fillRect(x, y, this.cellSize, this.cellSize)
+
+    if (value === 0)
+        return // не рисуем текст пустой ячейки
+
+    // в центре ячейки выводим текст с её значением
+    this.ctx.textAlign = "center"
+    this.ctx.textBaseline = "middle"
+    this.ctx.font = `${this.cellSize / 2.75}px Arial`
+    this.ctx.fillStyle = value < 3 ? this.colors.field : "#ffffff"
+    this.ctx.fillText(1 << value, x + this.cellSize / 2, y + this.cellSize / 2)
+}
+</pre>
+</div>
+
+<p>В результате при создании игрового объекта canvas будет выглядеть следующим образом:</p>
+
+<div class="article-picture">
+    <img src="/images/articles/{{article.link}}/draw_field.png" alt="пустое поле игры 2048">
+</div>
+
+<h2>Добавление новых плиток</h2>
+
+<p>Теперь, когда мы научились отрисовывать состояние игры, пришло время разобраться с добавлением новых плиток. В игре они добавляются в случайные места, ещё не занятые другими плитками. Для реализации этого нам нужно сформировать индексы пустых ячеек и выбрать из них случайный. Реализуем эту логику с помощью двух методов:</p>
+
+<ul>
+    <li><code>getAvailableCells()</code> – будет возвращать список индексов, значение игрового поля в которых равно нулю,</li>
+    <li><code>add(value)</code> – будет выбирать случайное место среди доступных и помещать в него переданное значение плитки:</li>
+</ul>
+
+<div class="code">
+    <div class="code-title">Добавление плиток</div>
+<pre data-lang="js">
+// получение индексов пустых ячеек
+getAvailableCells() {
+    let available = []
+
+    for (let index = 0; index &lt; this.field.length; index++)
+        if (this.field[index] == 0)
+            available.push(index)
+
+    return available
+}
+
+// добавление плитки со значением value в одну из пустых ячеек
+add(value) {
+    const availableCells = this.getAvailableCells()
+    if (availableCells.length == 0)
+        return // если некуда добавлять, то и не добавляем
+
+    // выбираем случайный индекс и помещаем в эту точку на поле переданную плитку
+    const index = availableCells[Math.floor(Math.random() * availableCells.length)]
+    this.field[index] = value
+}
+</pre>
+</div>
+
+<p>Изначально игра начинается с двух плиток: 2 и 2 или 2 и 4. Первая плитка всегда является двойкой, а вот вторую с 75 процентной вероятностью мы будем делать двойкой, а в 25% случаев четвёркой. Для этого добавим вызов только что написанного метода в конструктор сразу после создания игрового поля:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем две начальные плитки</div>
+<pre data-lang="js">
+constructor(config) {
+    ...
+    this.field = new Array(this.n * this.n).fill(0)
+
+    // добавляем две начальных плитки в случайные места
+    this.add(1)
+    this.add(Math.random() < 0.75 ? 1 : 2)
+
+    this.draw()
+}
+</pre>
+</div>
+
+<p>Теперь на поле есть две плитки:</p>
+
+<div class="article-picture">
+    <img src="/images/articles/{{article.link}}/add.png" alt="начальное поле игры 2048">
+</div>
+
+<h2>Сдвиг плиток</h2>
+
+<p>Пришло время разобраться с самым главным алгоритмом, заложенном в игру 2048: сдвиг плиток в сторону. Рассмотрим, как реализовать сдвиг плиток для группы плиток (в качестве группы будет выступать строка или столбец на поле). Для удобства будем считать, что у нас есть массив индексов с плитками, которые нужно сдвинуть, и метод <code>shift(indices)</code>, который будет осуществлять сдвиг и возвращать булево значение – был ли вообще сдвиг. В таком случае для сдвига в одну сторону всего поля, достаточно будет лишь сформировать <code>n</code> списков соответствующих индексов и вызвать метод <code>shift</code> для них.</p>
+
+<h3>Алгоритм сдвига плиток без слияния</h3>
+
+<p>Для начала будем считать, что нам нужно всего лишь выполнить сдвиг всех плиток в начало кроме пустых (пока что мы сознательно пропускаем случай слияния значений). Для этого мы заведём индекс <code>i = 0</code>, в котором будем хранить положение ячейки, в которую можно поместить непустую плитку. Затем, проходя в цикле по переданным индексам, будем помещать ненулевое значение в позицию с индексом <code>i</code>. Тогда в конце цикла значение <code>i</code> будет соответствовать количество сдвинутых (не пустых) плиток, но в массиве (если были пустые плитки) останутся мусорные значения, которые необходимо занулить (собственно выполнить перенос пустых плиток в конец). Реализуем эту версию в методе <code>shift</code> и затем рассмотрим подробнее принцип её работы:</p>
+
+<div class="code">
+    <div class="code-title">Алгоритм сдвига плиток без слияния</div>
+<pre data-lang="js">
+shift(indices) {
+    let i = 0 // индекс очередной позиции
+
+    for (const index of indices)
+        if (this.field[index] &gt; 0) // если плитка не пустая
+            this.field[indices[i++]] = this.field[index] // помещаем её в новую позицию
+
+    // сдвигаем пустые плитки в конец
+    while (i &lt; indices.length)
+        this.field[indices[i++]] = 0
+}
+</pre>
+</div>
+
+<p>Предположим, что мы сдвигаем элементы с индексами <code>[0, 1, 2, 3]</code> со значениями <code>[0, 7, 0, 5]</code>. Рассмотрим, что делает алгоритм по шагам:</p>
+
+<ul>
+    <li>Шаг 1. <code>i = 0</code>, <code>index = 0</code>: значение на поле равно <code>0</code>, поэтому пропускаем его и идём дальше;</li>
+    <li>Шаг 2. <code>i = 0</code>, <code>index = 1</code>: значение на поле равно <code>7</code>, записываем его по индексу <code>indices[i++] = 0</code>, а значения становятся такими: <code>[7, 7, 0, 5]</code>;</li>
+    <li>Шаг 3. <code>i = 1</code>, <code>index = 2</code>: значение на поле равно <code>0</code>, пропускаем его и идём дальше</li>
+    <li>Шаг 4. <code>i = 1</code>, <code>index = 3</code>: значение на поле равно <code>5</code>, записываем его по индексу <code>indices[i++] = 1</code>, а значения становятся такими: <code>[7, 5, 0, 5]</code>;</li>
+    <li>Шаг 5. <code>i = 2</code>, дозаписываем оставшуюся часть массива нулями: <code>[7, 5, 0, 0]</code></li>
+</ul>
+
+<p>В результате мы действительно осуществили сдвиг непустых плиток в начало, а значит пришло время рассмотреть случай со слиянием.</p>
+
+<h3>Полноценный алгоритм сдвига плиток</h3>
+
+<p>Версия, учитывающая слияние, на самом деле будет не сильно отличаться от уже написанной. В момент перемещения очередной плитки нам нужно понять, не совпадает ли её значение со значением предыдущей непустой плитки. В том случае, если значения совпадают, то вместо сдвига позиции по <code>i</code>, необходимо увеличить значение предыдущей ячейки на 1 (а также увеличить счёт на величину полученной плитки). При этом необходимо учесть, что сразу после слияния нам нельзя выполнять новое слияние со следующей плиткой, даже если её значение совпадает с только что увеличенным (случай <code>[3, 3, 4, 5]</code> должен превратиться в <code>[4, 4, 5, 0]</code>, а не в <code>[6, 0, 0, 0]</code> в рамках одного сдвига). Обновим наш метод:</p>
+
+<div class="code">
+    <div class="code-title">Алгоритм сдвига плиток</div>
+<pre data-lang="js">
+shift(indices) {
+    let i = 0
+    let merge = false // было ли перед этим слияние
+
+    for (const index of indices) {
+        if (this.field[index] == 0)
+            continue // пустые ячейки пропускаем
+
+        // можем выполнить слияние, если значения совпадают и перед этим не было слияния
+        merge = !merge && i &gt; 0 && this.field[indices[i - 1]] == this.field[index]
+
+        if (merge) {
+            this.field[indices[i - 1]]++ // удваиваем значение предыдущей плитки
+            this.score += 1 &lt;&lt; (this.field[index] + 1) // увеличиваем счёт
+        }
+        else
+            this.field[indices[i++]] = this.field[index] // просто сдвигаем ячейку
+    }
+
+    while (i &lt; indices.length)
+        this.field[indices[i++]] = 0
+}
+</pre>
+</div>
+
+<p>Теперь остаётся только вернуть флаг наличия сдвига: сдвиг был, если было хоть одно слияние или же непустая плитка перемещалась на новое место:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем флаг наличия сдвига</div>
+<pre data-lang="js">
+shift(indices) {
+    let shifted = false // был ли сдвиг
+
+    for (const index of indices) {
+        ...
+        merge = ...
+
+        // сдвиг был, если было слияние или плитка перемещалась на новое место
+        shifted |= merge || indices[i] != index
+    }
+
+    ...
+    return shifted
+}
+</pre>
+</div>
+
+<h3>Сдвигаем плитки в одну сторону</h3>
+
+<p>Теперь у нас есть метод, позволяющий сдвинуть один набор плиток, а нам нужно сдвинуть сразу <code>n</code> таких наборов. Мы, конечно, могли бы написать методы <code>shiftLeft</code>, <code>shiftRight</code>, <code>shiftUp</code> и <code>shiftDown</code>, продублировав кучу кода, но мы пойдём другим путём. Рассмотрим, как выглядели бы методы сдвига всех строк влево и вверх:</p>
+
+<div class="code">
+    <div class="code-title">Сдвиги влево и вверх</div>
+<pre data-lang="js">
+shiftLeft() {
+    let shifted = false
+
+    for (let row = 0; row &lt; this.n; row++) {
+        let indices = []
+
+        // формируем список индексов для каждой строки
+        for (let column = 0; column &lt; this.n; column++)
+            indices.push(row * this.n + column)
+
+        shift |= this.shift(indices) // выполняем сдвиг строки
+    }
+
+    return shifted
+}
+
+shiftUp() {
+    let shifted = false
+
+    for (let column = 0; column &lt; this.n; column++) {
+        let indices = []
+
+        // формируем список индексов для каждого столбца
+        for (let row = 0; row &lt; this.n; row++)
+            indices.push(row + column * this.n)
+
+        shift |= this.shift(indices) // выполняем сдвиг столбца
+    }
+
+    return shifted
+}
+</pre>
+</div>
+
+<p>Как видите, методы очень сильно похожи друг на друга. Мы можем выделить общую часть и реализовать метод <code>shiftCells</code>, принимающий определённые параметры так, чтобы его можно было использовать для всех четырёх сторон сразу:</p>
+
+<div class="code">
+    <div class="code-title">Сдвиг ячеек в произвольную сторону</div>
+<pre data-lang="js">
+shiftCells(/* какие-то параметры*/) {
+    let shifted = false
+
+    for (let i = 0; i &lt; this.n; i++) {
+        let indices = []
+
+        // формируем список индексов для каждой группы
+        for (let j = 0; j &lt; this.n; j++)
+            indices.push(/* какая-то формула с i и j*/)
+
+        shift |= this.shift(indices) // выполняем сдвиг
+    }
+
+    return shifted
+}
+</pre>
+</div>
+
+<p>Теперь нам нужно понять, как должна выглядеть формула для заполнения индексов. Мы уже знаем, что для сдвига влево она выглядит как <code>i + j * n</code>, а для сдвига вверх она должна быть <code>i * n + j</code>. Но что на счёт сдвига вправо и вниз?</p>
+
+<p>Рассмотрим сначала сдвиг вправо:</p>
+
+<ul>
+    <li>Для строки с индексом <code>0</code> мы должны получить элементы с индексами <code>3</code>, <code>2</code>, <code>1</code> и <code>0</code>.</li>
+    <li>Для строки с индексом <code>1</code> мы должны получить элементы с индексами <code>7</code>, <code>6</code>, <code>5</code> и <code>4</code>.</li>
+    <li>Для строки с индексом <code>3</code> (<code>n - 1</code>) мы должны получить элементы с индексами <code>15</code>, <code>14</code>, <code>13</code> и <code>12</code>.</li>
+</ul>
+
+<p>Видно, что с ростом <code>j</code> значение уменьшается на 1, значит в формуле явно будет фигурировать <code>-j</code>. С ростом же переменной <code>i</code> увеличивается начальное значение, причём оно равно в точности <code>i * n + n - 1</code>. Таким образом общая формула заполнения индексов для сдвига вправо будет такой: <code>i * n - j + n - 1</code>.</p>
+
+<p>Рассмотрим теперь сдвиг вниз:</p>
+
+<ul>
+    <li>Для столбца с индексом <code>0</code> мы должны получить элементы с индексами <code>12</code>, <code>8</code>, <code>4</code> и <code>0</code>.</li>
+    <li>Для столбца с индексом <code>1</code> мы должны получить элементы с индексами <code>13</code>, <code>9</code>, <code>5</code> и <code>1</code>.</li>
+    <li>Для столбца с индексом <code>3</code> (<code>n - 1</code>) мы должны получить элементы с индексами <code>15</code>, <code>11</code>, <code>7</code> и <code>3</code>.</li>
+</ul>
+
+<p>Видно, что с увеличением <code>j</code> значение уменьшается в точности на <code>n</code>. А с ростом <code>i</code> значение увеличивается на единицу. Остаётся лишь найти начальное значение, которое вычисляется как <code>n * (n - 1)</code>, а итоговая формула будет иметь вид <code>i - j * n + n * (n - 1)</code>.</p>
+
+<p>Легко заметить, что все 4 формулы можно легко представить в виде <code>di * i + dj * j + d</code>. А значит наш метод будет переписан следующим образом:</p>
+
+<div class="code">
+    <div class="code-title">Сдвиг ячеек в произвольную сторону</div>
+<pre data-lang="js">
+shiftCells(di, dj, d) {
+    let shifted = false
+
+    for (let i = 0; i < this.n; i++) {
+        // используем методы массива для более элегантного создания массива индексов
+        const indices = Array.from(Array(this.n), (_, j) => i * di + j * dj + d)
+        shifted |= this.shift(indices)
+    }
+
+    return shifted
+}
+</pre>
+</div>
+
+<h2>Обрабатываем клавиатуру</h2>
+
+<p>Для непосредственно игры нам теперь очень сильно не хватает управления с клавиатуры. Для этого навесим обработчик <code>keyDown</code> на документ (<code>document</code>), внутри которого будем выполнять сдвиги в разные стороны в зависимости от нажатой клавиши. Если была нажата одна из стрелок, то добавим новую плитку и обновим состояние игрового поля:</p>
+
+<div class="code">
+    <div class="code-title">Обработка нажатий клавиш клавиатуры</div>
+<pre data-lang="js">
+constructor(config) {
+    ...
+    document.addEventListener("keydown", e => this.keyDown(e))
+}
+
+keyDown(e) {
+    let shifted = false
+
+    if (e.key == "ArrowLeft")
+        shifted = this.shiftCells(this.n, 1, 0)
+    else if (e.key == "ArrowRight")
+        shifted = this.shiftCells(this.n, -1, this.n - 1)
+    else if (e.key == "ArrowUp")
+        shifted = this.shiftCells(1, this.n, 0)
+    else if (e.key == "ArrowDown")
+        shifted = this.shiftCells(1, -this.n, (this.n - 1) * this.n)
+
+    // если ничего не сдинули, то и делать ничего не будем
+    if (!shifted)
+        return
+
+    // добавляем новую плитку и перерисовываем поле
+    this.add(Math.random() < 0.75 ? 1 : 2)
+    this.draw()
+}
+</pre>
+</div>
+
+<p>Теперь игрой можно управлять с помощью стрелок: плитки будут сдвигаться и сливаться, а счёт будет постепенно расти.</p>
+
+<div class="article-picture">
+    <img src="/images/articles/{{article.link}}/keydown.png" alt="теперь игрой можно управлять с помощью стрелок">
+</div>
+
+<h2>У всего есть конец</h2>
+
+<p>К этому моменту у нас есть работающая игра 2048, которая позволяет управлять ей бесконечно долго, однако в какой-то момент сдвигать плитки станет просто некуда и именно тогда нам необходимо отрисовать экран с завершающей фразой "Game over!". Но прежде чем переходить к отрисовке, давайте разберёмся, а как собственно понять, что сдвигать плитки больше некуда?</p>
+
+<p>В качестве простого (но неверного) решения можно было бы запустить <code>shiftCells</code> для всех 4 направлений и проверить их результат. Но в таком случае нужно было бы сохранять состояние поля и восстанавливать его после, если сдвиг был. Поэтому так мы делать точно не будем.</p>
+
+<p>На самом деле сдвиг можно сделать в двух случаях:</p>
+
+<ul>
+    <li>есть хотя бы одна пустая ячейка;</li>
+    <li>по горизонтали или по вертикали есть две плитки с одинаковым значением.</li>
+</ul>
+
+<p>Для удобства реализуем метод <code>canShift</code>, проверяющий эти условия:</p>
+
+<div class="code">
+    <div class="code-title">Проверка осуществимости сдвига</div>
+<pre data-lang="js">
+canShift() {
+    // если есть хотя бы одна свободная клетка, то сдвиг возможен
+    if (this.getAvailableCells().length > 0)
+        return true
+
+    // свободных клеток нет, так что нужно проверить все соседние ячейки
+    for (let i = 0; i < this.n; i++)
+        for (let j = 1; j < this.n; j++)
+            if (this.field[i * this.n + j] == this.field[i * this.n + (j - 1)] || this.field[j * this.n + i] == this.field[(j - 1) * this.n + i])
+                return true
+
+    return false
+}
+</pre>
+</div>
+
+<p>Теперь добавим метод <code>drawGameOver</code>, выполняющий отрисовку окончания игры. Чтобы сильно ничего не менять, добавим в класс флаг <code>gameOver</code>, а внутри <code>draw</code> будем отрисовывать финальный экран, если этот флаг установлен:</p>
+
+<div class="code">
+    <div class="code-title">Отрисовка конца игры</div>
+<pre data-lang="js">
+constructor(config) {
+    ...
+    this.gameOver = false // флаг окончания игры
+}
+
+draw() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+
+    this.drawScore()
+    this.drawBoard()
+
+    if (this.isGameOver)
+        this.drawGameOver()
+}
+
+drawGameOver() {
+    this.ctx.fillStyle = this.colors.gameOver
+    this.ctx.fillRect(0, this.scoreHeight, this.fieldSize, this.fieldSize)
+    this.ctx.fillStyle = "#ffffff"
+    this.ctx.font = `${this.cellSize / 1.5}px Arial`
+    this.ctx.fillText("Game over!", this.fieldSize / 2, this.scoreHeight + this.fieldSize / 2)
+}
+</pre>
+</div>
+
+<p>Теперь внутри обработчика <code>keyDown</code> остаётся только обновить значение флага и можно считать игру завершённой:</p>
+
+<div class="code">
+    <div class="code-title">Обработка конца игры</div>
+<pre data-lang="js">
+keyDown(e) {
+    // ели игра окончена, то больше не обрабатываем клавиши
+    if (this.gameOver)
+        return
+
+    ...
+
+    this.add(Math.random() < 0.75 ? 1 : 2)
+    this.gameOver = !this.canShift() // обновляем флаг окончания игры
+    this.draw()
+}
+</pre>
+</div>
+
+<p>Теперь в конце игры будет понятно, что больше сдвигать некуда и необходимо начать заново.</p>
+
+<div class="article-picture">
+    <img src="/images/articles/{{article.link}}/game_over.png" alt="окончание игры">
+</div>
+
+<h2>Заключение</h2>
+
+<p>Поздравляю! Спустя всего 180 строк javascript кода у нас есть минималистичный, но полностью рабочий <a class="link" href="/media/articles/{{article.link}}/game2048.html">клон культовой игры 2048</a>, а также целый багаж знаний по работе с <b class="highlight">Canvas API</b> и некоторыми методами работы с массивами.</p>
+
+<p>Конечно, в этой версии много изъянов: она не поддерживает touch события, в ней нет плавных анимаций переходов и, если закрыть вкладку, то прогресс будет утерян. Всё это можно запросто добавить в текущую версию буквально в ещё несколько js строк, однако это выходит за рамки данного гайда.</p>
+
+<p>Если вы дочитали эту статью до конца и запустили свою игру – поздравляю! Вы только что собрали свою версию 2048 с нуля. Играйте, улучшайте и не бойтесь экспериментировать.</p>
+
+<div class="code code-collapsed">
+    <div class="code-title">Итоговый файл <a class="link" href="/media/articles/{{article.link}}/game2048.html" download>game2048.html</a> (остался без изменений)</div>
+<pre data-lang="html">
+    &lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;meta charset="utf-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+    &lt;title&gt;Игра 2048&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;canvas id="canvas"&gt;&lt;/canvas&gt;
+
+    &lt;script type="text/javascript" src="game2048.js"&gt;&lt;/script&gt;
+    &lt;script&gt;
+        const config = {
+            canvas: document.getElementById("canvas"),
+            n: 4, // размер поля 4x4
+            cellSize: 100, // размер ячеек в пикселях
+            border: 6, // толщина стенок между ячейками
+            scoreHeight: 75 // высота области для отрисовки текущего счёта
+        }
+
+        const game = new Game2048(config) // создаём экземпляр класса с игрой
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+</div>
+
+<div class="code code-collapsed">
+    <div class="code-title">Итоговый файл <a class="link" href="/media/articles/{{article.link}}/game2048.js" download>game2048.js</a></div>
+<pre data-lang="js">
+class Game2048 {
+    constructor(config) {
+        this.n = config.n ?? 4
+        this.cellSize = config.cellSize ?? 100
+        this.scoreHeight = config.scoreHeight ?? 75
+        this.border = config.border ?? 5
+        this.fieldSize = this.n * (this.cellSize + this.border) + this.border
+
+        this.canvas = config.canvas
+        this.canvas.width = this.fieldSize
+        this.canvas.height = this.scoreHeight + this.fieldSize
+
+        this.ctx = this.canvas.getContext("2d")
+
+        this.colors = {
+            score: "#bdaca0",
+            field: "#bdaca0",
+            gameOver: "#eee4caba",
+            cells: [
+                "#cdc2b3", "#efe5da", "#ece0c8", "#f0b17d", "#f19867",
+                "#f07e63", "#f46141", "#eacf78", "#edcd66", "#ecc75b",
+                "#e8c256", "#e9be4c", "#fd3f3f", "#fe2222", "#000000"
+            ]
+        }
+
+        this.field = new Array(this.n * this.n).fill(0)
+        this.score = 0
+        this.gameOver = false
+
+        this.add(1)
+        this.add(Math.random() &lt; 0.75 ? 1 : 2)
+        this.draw()
+
+        document.addEventListener("keydown", e =&gt; this.keyDown(e))
+    }
+
+    getAvailableCells() {
+        let available = []
+
+        for (let index = 0; index &lt; this.field.length; index++)
+            if (this.field[index] == 0)
+                available.push(index)
+
+        return available
+    }
+
+    add(value) {
+        const availableCells = this.getAvailableCells()
+        if (availableCells.length == 0)
+            return
+
+        const index = availableCells[Math.floor(Math.random() * availableCells.length)]
+        this.field[index] = value
+    }
+
+    draw() {
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+
+        this.drawScore()
+        this.drawBoard()
+
+        if (this.gameOver)
+            this.drawGameOver()
+    }
+
+    drawScore() {
+        this.ctx.textAlign = "center"
+        this.ctx.textBaseline = "middle"
+        this.ctx.font = `${this.cellSize / 2}px Arial`
+        this.ctx.fillStyle = this.colors.score
+        this.ctx.fillText(`Score: ${this.score}`, this.fieldSize / 2, this.scoreHeight / 2)
+    }
+
+    drawBoard() {
+        this.ctx.fillStyle = this.colors.field
+        this.ctx.fillRect(0, this.scoreHeight, this.fieldSize, this.fieldSize)
+
+        for (let i = 0; i &lt; this.n; i++)
+            for (let j = 0; j &lt; this.n; j++)
+                this.drawCell(i, j)
+    }
+
+    drawCell(i, j) {
+        const value = this.field[i * this.n + j]
+        const x = this.border + j * (this.cellSize + this.border)
+        const y = this.scoreHeight + this.border + i * (this.cellSize + this.border)
+
+        this.ctx.fillStyle = this.colors.cells[Math.min(value, this.colors.cells.length - 1)]
+        this.ctx.fillRect(x, y, this.cellSize, this.cellSize)
+
+        if (value === 0)
+            return
+
+        this.ctx.font = `${this.cellSize / 2.75}px Arial`
+        this.ctx.fillStyle = value &lt; 3 ? this.colors.field : "#ffffff"
+        this.ctx.fillText(1 &lt;&lt; value, x + this.cellSize / 2, y + this.cellSize / 2)
+    }
+
+    drawGameOver() {
+        this.ctx.fillStyle = this.colors.gameOver
+        this.ctx.fillRect(0, this.scoreHeight, this.fieldSize, this.fieldSize)
+        this.ctx.fillStyle = "#ffffff"
+        this.ctx.font = `${this.cellSize / 1.5}px Arial`
+        this.ctx.fillText("Game over!", this.fieldSize / 2, this.scoreHeight + this.fieldSize / 2)
+    }
+
+    canShift() {
+        if (this.getAvailableCells().length &gt; 0)
+            return true
+
+        for (let i = 0; i &lt; this.n; i++)
+            for (let j = 1; j &lt; this.n; j++)
+                if (this.field[i * this.n + j] == this.field[i * this.n + (j - 1)] || this.field[j * this.n + i] == this.field[(j - 1) * this.n + i])
+                    return true
+
+        return false
+    }
+
+    shift(indices) {
+        let i = 0
+        let merge = false
+        let shifted = false
+
+        for (const index of indices) {
+            if (this.field[index] == 0)
+                continue
+
+            merge = !merge && i &gt; 0 && this.field[indices[i - 1]] == this.field[index]
+            shifted |= merge || indices[i] != index
+
+            if (merge) {
+                this.field[indices[i - 1]]++
+                this.score += 1 &lt;&lt; (this.field[index] + 1)
+            }
+            else
+                this.field[indices[i++]] = this.field[index]
+        }
+
+        while (i &lt; indices.length)
+            this.field[indices[i++]] = 0
+
+        return shifted
+    }
+
+    shiftCells(di, dj, d) {
+        let shifted = false
+
+        for (let i = 0; i &lt; this.n; i++) {
+            const indices = Array.from(Array(this.n), (_, j) =&gt; i * di + j * dj + d)
+            shifted |= this.shift(indices)
+        }
+
+        return shifted
+    }
+
+    keyDown(e) {
+        if (this.gameOver)
+            return
+
+        let shifted = false
+
+        if (e.key == "ArrowLeft")
+            shifted = this.shiftCells(this.n, 1, 0)
+        else if (e.key == "ArrowRight")
+            shifted = this.shiftCells(this.n, -1, this.n - 1)
+        else if (e.key == "ArrowUp")
+            shifted = this.shiftCells(1, this.n, 0)
+        else if (e.key == "ArrowDown")
+            shifted = this.shiftCells(1, -this.n, (this.n - 1) * this.n)
+
+        if (!shifted)
+            return
+
+        this.add(Math.random() &lt; 0.75 ? 1 : 2)
+        this.gameOver = !this.canShift()
+        this.draw()
+    }
+}
+</pre>
+</div>

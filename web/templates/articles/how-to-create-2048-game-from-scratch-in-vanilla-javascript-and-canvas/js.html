@@ -1,0 +1,15 @@
+<script src="/js/utils/code_highlight.js?v={{version}}"></script>
+<script src="/js/utils/gallery.js?v={{version}}"></script>
+<script>
+    let codeHighlight = new CodeHighlight()
+
+    for (let code of document.querySelectorAll(".code pre"))
+        codeHighlight.Highlight(code)
+
+    let gallery = new Gallery()
+
+    for (let image of document.querySelectorAll(".article-picture img")) {
+        let index = gallery.AddPhoto({url: image.getAttribute("src")})
+        image.addEventListener("click", () => gallery.ShowPhoto(index))
+    }
+</script>

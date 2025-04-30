@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Игра 2048</title>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script type="text/javascript" src="game2048.js"></script>
+    <script>
+        const config = {
+            canvas: document.getElementById("canvas"),
+            n: 4,
+            cellSize: 100,
+            border: 5,
+            scoreHeight: 75
+        }
+
+        const game = new Game2048(config)
+    </script>
+</body>
+</html>

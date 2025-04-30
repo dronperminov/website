@@ -27,7 +27,7 @@
     overflow-x: auto;
     line-height: 1.3;
     white-space: pre;
-    font-family: monospace;
+    font-family: Courier New, monospace;
     margin: 0;
     text-align: left;
     padding: 8px 0;
@@ -60,6 +60,10 @@
 /* классы для javascript */
 .code-js-namespace {
     color: #b90063;
+}
+
+.code-js-function {
+    color: #0b57d0;
 }
 
 .code-js-identifier {
@@ -125,7 +129,6 @@
     width: 2.4em;
 }
 
-/*.code-other {
-    font-size: 2em;
-    font-weight: bold;
-}*/
+.code-no-lines .code-line:before {
+    display: none;
+}

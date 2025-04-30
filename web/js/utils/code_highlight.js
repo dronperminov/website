@@ -10,10 +10,13 @@ class CodeHighlight {
             spans = this.ParseHTML(text)
         else if (lang == "css")
             spans = this.ParseCSS(text)
+        else
+            spans = this.ParseText(text)
 
         block.innerHTML = this.AddNewLines(spans).join("").trim()
 
-        this.SetLinesClass(block, text)
+        if (!block.classList.contains("code-no-lines"))
+            this.SetLinesClass(block, text)
     }
 
     SetLinesClass(block, text) {
@@ -35,12 +38,13 @@ class CodeHighlight {
             `(?<line>\\n)`,
             `(?<whitespace> +)`,
             `(?<comment>//.*|/\\*.+\\*/)`,
-            `(?<keyword>\\b(if|for|while|class|const|let|var|function|return|new|this|constructor)\\b)`,
-            `(?<js_namespace>\\b(Math|console|navigator)\\b)`,
-            `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+))`,
+            `(?<keyword>\\b(if|else|for|while|class|const|let|var|function|return|new|this|constructor|continue|break|throw|try|catch)\\b)`,
+            `(?<js_namespace>\\b(Math|console|navigator|document|window|Array|Set|Map|RegExp|Error|BigInt)\\b)`,
+            `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|\\btrue\\b|\\bfalse\\b))`,
             `(?<string>'[^']*'|"[^"]*"|\`[^\`]*\`)`,
+            `(?<js_function>\\b[a-zA-Z_]\\w*\\b)(?=\\()`,
             `(?<js_identifier>\\b[a-zA-Z_]\\w*\\b)`,
-            `(?<js_operator>([=+\\-*/%<>]|==|===|<=|>=|!=|\\?\\?|\\.\\.\\.))`,
+            `(?<js_operator>(=>|\\|\\||&&|===|[=+\\-*/%<>^&\\|]=?|!=|=|\\?\\?|\\.\\.\\.|!|~))`,
             `(?<punctuation>[;:.,?(){}\\[\\]])`,
             `(?<other>.+)`
         ].join("|"), "g")
@@ -115,6 +119,10 @@ class CodeHighlight {
         ].join("|"), "g")
 
         return this.Parse(text, regexp)
+    }
+
+    ParseText(text) {
+        return this.Parse(text, new RegExp(`(?<line>\\n)|(?<other>.+)`, "g"))
     }
 
     Parse(text, regexp, subparse = null) {

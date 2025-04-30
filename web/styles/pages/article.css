@@ -69,8 +69,6 @@ article text {
 .article-picture img {
     max-width: min(100%, 800px);
     cursor: pointer;
-    border: 1px solid var(--border-color);
-    border-radius: 15px;
 }
 
 @media (max-width: 767px) {
