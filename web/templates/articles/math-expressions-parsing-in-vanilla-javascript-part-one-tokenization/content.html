@@ -1,0 +1,311 @@
+<p class="note">Цикл статей о создании собственного парсера выражений: от токенизации до полноценного синтаксического разбора.</p>
+
+<h2>Оглавление цикла</h2>
+
+<ul>
+    <li>Часть 1: Токенизация (вы находитесь здесь)</li>
+    <!--<li><a class="link" href="">Часть 2: Вычисление выражения в обратной польской записи</a></li>
+    <li><a class="link" href="">Часть 3: Парсинг через алгоритм сортировочной станции</a></li>
+    <li><a class="link" href="">Часть 4: Рекурсивный нисходящий парсер</a></li>
+    <li><a class="link" href="">Часть 5: Парсер Пратта и приоритет на лету</a></li>-->
+</ul>
+
+
+<h2>Обработка математических выражений</h2>
+<p>Во многих задачах – от калькуляторов до интерпретаторов и даже научных редакторов – возникает необходимость обрабатывать математические выражения. Казалось бы, можно просто использовать <code>eval</code>, но:</p>
+
+<ul>
+    <li>Это <b class="highlight">небезопасно</b>: пользователь может выполнить произвольный код.</li>
+    <li>Это <b class="highlight">неудобно</b>: невозможно перехватить ошибку синтаксиса, не зная её заранее.</li>
+    <li>Это <b class="highlight">негибко</b>: нет возможности внедрить свои функции, переменные, константы и правила приоритета.</li>
+</ul>
+
+<p>Вот почему надёжнее реализовать свой собственный парсер выражений, полностью управляемый и расширяемый.</p>
+
+<p>В этой серии статей мы не просто напишем какое-нибудь решение, а познакомимся с теорией парсеров, создав парсер математических выражений несколькими способами:</p>
+
+<ul>
+    <li>калькулятор выражений в <b class="highlight">обратной польской записи</b> (Reverse Polish Notation);</li>
+    <li>алгоритм <b class="highlight">сортировочной станции</b> (Shunting Yard Algorithm);</li>
+    <li><b class="highlight">рекурсивный разбор</b> (Recursive Descent Parser);</li>
+    <li><b class="highlight">парсер Пратта</b> с динамическим управлением приоритетами.</li>
+</ul>
+
+<p>В итоге каждый написанный парсер будет способен обрабатывать выражения, содержащие:</p>
+<ul>
+    <li>целые и вещественные числа;</li>
+    <li>базовые математические операции: сложение, вычитание, умножение, деление и возведение в степень;</li>
+    <li>круглые скобки для изменения порядка действий – <code>(</code> и <code>)</code>;</li>
+    <li>унарный минус (отличить вычитание от унарной операции не такая простая задача) – <code>-(2+4)</code> против <code>2-4</code>;</li>
+    <li>функции одного и двух аргументов: <code>sin(x)</code>, <code>cos(x)</code>, <code>max(x, y)</code>, ...;</li>
+    <li>математические константы: <code>&pi;</code>, <code>e</code>;</li>
+    <li>переменные: <code>x</code>, <code>y</code>, <code>var123</code>, ...;</li>
+</ul>
+
+<p>Но начнём мы эту серию с этапа, без которого не обходится ни один парсер – с <b class="highlight">токенизации</b> выражения.</p>
+
+<h2>Токенизация</h2>
+
+<p>Первым шагом любого парсера всегда идёт лексический анализ или, проще говоря, токенизация. На этом этапе строка, такая как</p>
+
+<div class="code">
+    <div class="code-title">Пример математического выражения</div>
+<pre class="code-no-lines" data-lang="math">
+2.57 * sin(x + pi) - ln(10)
+</pre>
+</div>
+
+<p>превращается в последовательность элементарных токенов: чисел, переменных, операторов, функций, скобок и т.п:</p>
+
+<div class="code">
+    <div class="code-title">Результат токенизации выражения</div>
+<pre class="code-no-lines" data-lang="js">
+["2.57", "*", "sin", "(", "x", "+", "pi", ")", "-", "ln", "(", "10", ")"]
+</pre>
+</div>
+
+<p>Мы реализуем токенизатор как отдельный класс <code>ExpressionTokenizer</code>, который:</p>
+
+<ul>
+    <li>позволяет управлять списком поддерживаемых функций и констант;</li>
+    <li>игнорирует пробельные символы;</li>
+    <li>сохраняет позиции токенов для информативности;</li>
+    <li>проверяет выражение на наличие неподдерживаемых символов;</li>
+    <li>использует регулярные выражения с именованными группами (<code>(?&lt;name&gt;...)</code>);</name>
+    <li>удобно интегрируется с будущими парсерами.</li>
+</ul>
+
+
+<h2>Какие токены нам нужны?</h2>
+
+<p>Прежде чем приступить к реализации токенизатора, давайте определим, из каких токенов может состоять математическое выражение.</p>
+
+<p>Нас будут интересовать следующие типы токенов:</p>
+
+<ul>
+    <li><b class="highlight">Числа</b> – как целые, так и дробные (<code>3</code>, <code>-2.5</code>, <code>0.01</code>);</li>
+    <li><b class="highlight">Константы</b> – вроде <code>pi</code>, <code>&pi;</code>, <code>e</code>, заранее заданные при инициализации;</li>
+    <li><b class="highlight">Функции</b> – как <code>sin</code>, <code>log</code>, <code>sqrt</code>, передающиеся явно при создании токенизатора;</li>
+    <li><b class="highlight">Переменные</b> – любые имена, например <code>x</code>, <code>temperature</code>, <code>v_0</code>;</li>
+    <li><b class="highlight">Операторы</b> – такие как <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>^</code>;</li>
+    <li><b class="highlight">Скобки</b> – <code>(</code> и <code>)</code>, определяющие приоритет операций;</li>
+    <li><b class="highlight">Разделители аргументов функции</b> – <code>,</code> для функций, принимающих более одного аргумента;</li>
+    <li><b class="highlight">Любые другие символы</b> – такие как <code>?</code>, <code>@</code>, <code>!</code>, которые не должны присутствовать и будут выделены как ошибки.</li>
+</ul>
+
+<p>Поддержка такого набора позволит анализировать как простые выражения, так и достаточно сложные вроде:</p>
+
+<div class="code">
+<pre class="code-no-lines" data-lang="math">
+-3 * ln(1 + x^2) / PI
+</pre>
+</div>
+
+<p>Всё, что нам нужно на этом этапе – это превратить строку в последовательность таких токенов, сохранив информацию о типе, значении и позиции каждого из них. Именно этим мы сейчас и займёмся.</p>
+
+
+<h2>Пишем токенизатор</h2>
+
+<p>Для преобразования строки выражения в список токенов мы создадим отдельный файл <code>expression_tokenizer.js</code> с классом <code>ExpressionTokenizer</code>. Конструктор токенизатора будет принимать два списка: имена допустимых функций (<code>functions</code>) и названия поддерживаемых констант (<code>constants</code>).</p> 
+
+<p>Сама токенизация будет происходить в методе <code>tokenize</code>, принимающим строку с выражением. При вызове будет возвращаться список токенов, каждый из которых будет содержать:</p>
+
+<ul>
+    <li><code>type</code> – тип токена (<code>number</code>, <code>operator</code>, <code>function</code>, ...);</li>
+    <li><code>value</code> – текстовое значение токена;</li>
+    <li><code>start</code> и <code>end</code> – индексы данного токена в исходной строке.</li>
+</ul>
+
+<div class="code">
+    <div class="code-title">Заготовка токенизатора (expression_tokenizer.js)</div>
+<pre data-lang="js">
+class ExpressionTokenizer {
+    constructor({functions, constants}) {
+
+    }
+
+    tokenize(expression) {
+        return ...
+    }
+}
+</pre>
+</div>
+
+<p>Добавим в конструктор регулярное выражение, которое позволит нам производить токенизацию:</p>
+
+<div class="code">
+    <div class="code-title">Создаём регулярное выражение</div>
+<pre data-lang="js">
+constructor({functions, constants}) {
+    this.regexp = new RegExp([
+        `(?&lt;left_parenthesis&gt;\\()`, // открывающая скобка
+        `(?&lt;right_parenthesis&gt;\\))`, // закрывающая скобка
+        `(?&lt;delimeter&gt;,)`, // разделитель аргументов функции
+        `(?&lt;operator&gt;[-+*/^])`, // операции
+        `(?&lt;function&gt;${functions.join("|")})`, // функции
+        `(?&lt;constant&gt;\\b(${constants.join("|")})\\b)`, // константы
+        `(?&lt;number&gt;\\d+(\\.\\d+)?)`, // целые и вещественные числа
+        `(?&lt;variable&gt;[a-z]\\w*)`, // переменные
+        `(?&lt;unknown&gt;\\S)` // все остальные символы, кроме пробельных
+    ].join("|"), "gi")
+}
+</pre>
+</div>
+
+<p>Чтобы разбить строку на токены, воспользуемся методом строки <code>matchAll</code>: он принимает регулярное выражение и возвращает итератор с обнаруженными совпадениями (<code>matches</code>). Нам нужно из этих совпадений сформировать токены, для чего напишем вспомогательный метод <code>matchToToken</code>. В нём нам нужно определить, к какой из именованных групп относится выделенная подстрока:</p>
+
+<div class="code">
+    <div class="code-title">Токенизируем выражение</div>
+<pre data-lang="js">
+tokenize(expression) {
+    const matches = expression.matchAll(this.regexp) // ищем все совпадения
+    const tokens = [...matches.map(match => this.matchToToken(match))] // преобразуем в токены
+
+    return tokens
+}
+
+// метод, преобразующий совпадение в токен
+matchToToken(match) {
+    for (const [type, value] of Object.entries(match.groups))
+        if (value)
+            return {type: type, value: value, start: match.index, end: match.index + value.length}
+
+    return null
+}
+</pre>
+</div>
+
+<p>Теперь, нам нужно проверить, не было ли обнаружено в выражении недопустимых символов. Если среди токенов будет хотя бы один с типом <code>unknown</code>, то нам нужно сообщить об ошибке. В качестве ошибки мы будем кидать исключение <code>InvalidLiteralsError</code>, которое специально для этого создадим, а саму проверку некорректных токенов вынесем в метод <code>validate</code>:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем выражение на наличие недопустимых символов</div>
+<pre data-lang="js">
+class InvalidLiteralsError extends Error {
+    constructor(tokens) {
+        super(`обнаружены недопустимые символы: ${tokens.map(token =&gt; token.value).join(", ")}`)
+        this.tokens = tokens // сохраним токены, чтобы можно было определить конкретные места с ошибками
+    }
+}
+
+class ExpressionTokenizer {
+    ...
+
+    tokenize(expression) {
+        const matches = expression.matchAll(this.regexp)
+        const tokens = [...matches.map(match =&gt; this.matchToToken(match))]
+        this.validate(tokens)
+
+        return tokens
+    }
+
+    validate(tokens) {
+        const unknown = tokens.filter(token =&gt; token.type === "unknown")
+
+        if (unknown.length &gt; 0)
+            throw new InvalidLiteralsError(unknown)
+    }
+}
+</pre>
+</div>
+
+<p>Теперь наш токенизатор не только разбивает выражение, но и следит за лексической корректностью ввода. Проверим его в деле:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем токенизатор</div>
+<pre data-lang="js">
+const tokenizer = new ExpressionTokenizer({functions: ["sin", "cos", "max"], constants: ["pi", "e"]})
+const tokens = tokenizer.tokenize("-2e^-x * sin(x + pi)^2")
+</pre>
+</div>
+
+<p>В результате в переменной <code>tokens</code> будет храниться такой массив:</p>
+
+<div class="code">
+    <div class="code-title">Результат токенизации корректного выражения</div>
+<pre class="code-no-lines" data-lang="js">
+[
+    {"type": "operator", "value": "-", "start": 0, "end": 1},
+    {"type": "number", "value": "2", "start": 1, "end": 2},
+    {"type": "variable", "value": "e", "start": 2, "end": 3},
+    {"type": "operator", "value": "^", "start": 3, "end": 4},
+    {"type": "operator", "value": "-", "start": 4, "end": 5},
+    {"type": "variable", "value": "x", "start": 5, "end": 6},
+    {"type": "operator", "value": "*", "start": 7, "end": 8},
+    {"type": "function", "value": "sin", "start": 9, "end": 12},
+    {"type": "left_parenthesis", "value": "(", "start": 12, "end": 13},
+    {"type": "variable", "value": "x", "start": 13, "end": 14},
+    {"type": "operator", "value": "+", "start": 15, "end": 16},
+    {"type": "constant", "value": "pi", "start": 17, "end": 19},
+    {"type": "right_parenthesis", "value": ")", "start": 19, "end": 20},
+    {"type": "operator", "value": "^", "start": 20, "end": 21},
+    {"type": "number", "value": "2", "start": 21, "end": 22}
+]
+</pre>
+</div>
+
+<p>При этом попытка токенизировать некорректное выражение приведёт к ошибке:</p>
+
+
+<div class="code">
+    <div class="code-title">Выражения с некорректными символами приводят к ошибке токенизации</div>
+<pre class="code-no-lines" data-lang="js">
+tokenizer.tokenize("1 + 2 * !3 -> sin(x)") // Uncaught InvalidLiteralsError: обнаружены недопустимые символы: !, >
+</pre>
+</div>
+
+<h2>Заключение</h2>
+
+<p>В этой статье мы познакомились с понятием лексического анализа выражений и написали свой собственный токенизатор, который уже сейчас позволяет находить некоторые виды ошибок в выражении (а именно некорректные символы).</p>
+
+<p>В следующей статье мы познакомимся с обратной польской нотацией и напишем свой собственный калькулятор математических выражений, записанных в этой форме. А пока, вот итоговый файл токенизатора: всего 45 строк!</p>
+
+<div class="code code-collapsed">
+    <div class="code-title">Итоговый файл <a class="link" href="/media/articles/{{article.link}}/expression_tokenizer.js" download>expression_tokenizer.js</a></div>
+<pre data-lang="js">
+class InvalidLiteralsError extends Error {
+    constructor(tokens) {
+        super(`обнаружены недопустимые символы: ${tokens.map(token =&gt; token.value).join(", ")}`)
+        this.tokens = tokens
+    }
+}
+
+class ExpressionTokenizer {
+    constructor({functions, constants}) {
+        this.regexp = new RegExp([
+            `(?&lt;left_parenthesis&gt;\\()`,
+            `(?&lt;right_parenthesis&gt;\\))`,
+            `(?&lt;delimeter&gt;,)`,
+            `(?&lt;operator&gt;[-+*/^])`,
+            `(?&lt;function&gt;${functions.join("|")})`,
+            `(?&lt;constant&gt;\\b(${constants.join("|")})\\b)`,
+            `(?&lt;number&gt;\\d+(\\.\\d+)?)`,
+            `(?&lt;variable&gt;[a-z]\\w*)`,
+            `(?&lt;unknown&gt;\\S)`
+        ].join("|"), "gi")
+    }
+
+    tokenize(expression) {
+        const matches = expression.matchAll(this.regexp)
+        const tokens = [...matches.map(match =&gt; this.matchToToken(match))]
+        this.validate(tokens)
+
+        return tokens
+    }
+
+    matchToToken(match) {
+        for (const [type, value] of Object.entries(match.groups))
+            if (value)
+                return {type: type, value: value, start: match.index, end: match.index + value.length}
+
+        return null
+    }
+
+    validate(tokens) {
+        const unknown = tokens.filter(token =&gt; token.type === "unknown")
+
+        if (unknown.length &gt; 0)
+            throw new InvalidLiteralsError(unknown)
+    }
+}
+</pre>
+</div>
