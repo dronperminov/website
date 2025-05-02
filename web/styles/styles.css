@@ -92,16 +92,16 @@ section p:last-child {
     margin-bottom: 0;
 }
 
-section ul {
-    padding-left: 16px;
-}
-
 section .paragraphs li {
     margin-bottom: 1em;
 }
 
 section h3 + ul {
     margin-top: -1em;
+}
+
+ul {
+    padding-left: 16px;
 }
 
 code {
@@ -147,6 +147,15 @@ math {
     grid-auto-flow: row;
     grid-gap: 1em;
     width: 100%;
+}
+
+.note {
+    background-color: #ffece5;
+    border-left: 5px solid var(--main-color);
+    padding: 5px 0 5px 10px;
+    border-radius: 0 5px 5px 0;
+    font-style: italic;
+    font-size: 0.9em;
 }
 
 .hidden {

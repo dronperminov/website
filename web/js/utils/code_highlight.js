@@ -10,6 +10,8 @@ class CodeHighlight {
             spans = this.ParseHTML(text)
         else if (lang == "css")
             spans = this.ParseCSS(text)
+        else if (lang == "math")
+            spans = this.ParseMath(text)
         else
             spans = this.ParseText(text)
 
@@ -38,9 +40,9 @@ class CodeHighlight {
             `(?<line>\\n)`,
             `(?<whitespace> +)`,
             `(?<comment>//.*|/\\*.+\\*/)`,
-            `(?<keyword>\\b(if|else|for|while|class|const|let|var|function|return|new|this|constructor|continue|break|throw|try|catch)\\b)`,
-            `(?<js_namespace>\\b(Math|console|navigator|document|window|Array|Set|Map|RegExp|Error|BigInt)\\b)`,
-            `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|\\btrue\\b|\\bfalse\\b))`,
+            `(?<keyword>\\b(if|else|for|while|class|const|let|var|function|return|new|this|extends|constructor|continue|break|throw|try|catch|in|of)\\b)`,
+            `(?<js_namespace>\\b(Math|console|navigator|document|window|Array|Set|Map|RegExp|Error|BigInt|Object)\\b)`,
+            `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|\\btrue\\b|\\bfalse\\b|\\bnull\\b))`,
             `(?<string>'[^']*'|"[^"]*"|\`[^\`]*\`)`,
             `(?<js_function>\\b[a-zA-Z_]\\w*\\b)(?=\\()`,
             `(?<js_identifier>\\b[a-zA-Z_]\\w*\\b)`,
@@ -117,6 +119,29 @@ class CodeHighlight {
             `(?<whitespace>\\s+)`,
             `(?<other>.+)`
         ].join("|"), "g")
+
+        return this.Parse(text, regexp)
+    }
+
+    ParseMath(text) {
+        let functions = [
+            "sin", "cos", "tg", "tan", "ctg", "cot", "sec", "cosec",
+            "arcsin", "asin", "arccos", "acos", "arctg", "atan",
+            "sh", "sinh", "ch", "cosh", "th", "tanh", "cth", "coth", "sech", "sch", "csch",
+            "arsh", "asinh", "arch", "acosh", "arth", "atanh",
+            "ln", "lg", "exp", "sqrt", "cbrt", "abs", "sign",
+            "max", "min", "pow", "log", "root"
+        ]
+
+        let regexp = new RegExp([
+            `(?<whitespace>\\s+)`,
+            `(?<punctuation>[(),])`,
+            `(?<math_operator>[-+*/^])`,
+            `(?<math_function>${functions.join("|")})`,
+            `(?<number>\\d+(\\.\\d+)?|\\b(pi|π|e)\\b)`,
+            `(?<math_variable>[a-z]\\w*)`,
+            `(?<unknown>.+?)`
+        ].join("|"), "gi")
 
         return this.Parse(text, regexp)
     }
