@@ -12,6 +12,8 @@ class CodeHighlight {
             spans = this.ParseCSS(text)
         else if (lang == "math")
             spans = this.ParseMath(text)
+        else if (lang == "preudo")
+            spans = this.ParsePreudo(text)
         else
             spans = this.ParseText(text)
 
@@ -39,7 +41,7 @@ class CodeHighlight {
         let regexp = new RegExp([
             `(?<line>\\n)`,
             `(?<whitespace> +)`,
-            `(?<comment>//.*|/\\*.+\\*/)`,
+            `(?<comment>//.*|/\\*[\\s\\S]+?\\*/)`,
             `(?<keyword>\\b(if|else|for|while|class|const|let|var|function|return|new|this|extends|constructor|continue|break|throw|try|catch|in|of)\\b)`,
             `(?<js_namespace>\\b(Math|console|navigator|document|window|Array|Set|Map|RegExp|Error|BigInt|Object)\\b)`,
             `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|\\btrue\\b|\\bfalse\\b|\\bnull\\b))`,
@@ -52,7 +54,8 @@ class CodeHighlight {
         ].join("|"), "g")
 
         let subparse = {
-            "string": (value) => this.ParseFormatStringJS(value)
+            "string": (value) => this.ParseFormatStringJS(value),
+            "comment": (value) => this.ParseMultilineComment(value)
         }
 
         return this.Parse(text, regexp, subparse)
@@ -74,6 +77,10 @@ class CodeHighlight {
 
         spans.push(`<span class="code-string">${text.slice(last)}</span>`)
         return spans
+    }
+
+    ParseMultilineComment(text) {
+        return this.Parse(text, /(?<line>\n)|(?<comment>[^\n]+)/g)
     }
 
     ParseHTML(text) {
@@ -134,14 +141,35 @@ class CodeHighlight {
         ]
 
         let regexp = new RegExp([
+            `(?<line>\\n)`,
             `(?<whitespace>\\s+)`,
+            `(?<comment>//.*|/\\*.+\\*/)`,
             `(?<punctuation>[(),])`,
+            `(?<string>'[^']*'|"[^"]*"|\`[^\`]*\`)`,
             `(?<math_operator>[-+*/^])`,
-            `(?<math_function>${functions.join("|")})`,
+            `(?<math_function>\\b(${functions.join("|")})\\b)`,
             `(?<number>\\d+(\\.\\d+)?|\\b(pi|π|e)\\b)`,
             `(?<math_variable>[a-z]\\w*)`,
             `(?<unknown>.+?)`
         ].join("|"), "gi")
+
+        return this.Parse(text, regexp)
+    }
+
+    ParsePreudo(text) {
+        let regexp = new RegExp([
+            `(?<line>\\n)`,
+            `(?<whitespace> +)`,
+            `(?<comment>//.*|/\\*.+\\*/)`,
+            `(?<keyword>\\b(if|else|elif|for|while|return|continue|break|in|assert|is|not|or|and)\\b)`,
+            `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|\\btrue\\b|\\bfalse\\b|\\bnull\\b))`,
+            `(?<string>'[^']*'|"[^"]*")`,
+            `(?<js_function>\\b[a-zA-Z_]\\w*\\b)(?=\\()`,
+            `(?<js_identifier>\\b[a-zA-Z_]\\w*\\b)`,
+            `(?<js_operator>(=>|\\|\\||&&|===|[=+\\-*/%<>^&\\|]=?|!=|=|\\?\\?|\\.\\.\\.|!|~))`,
+            `(?<punctuation>[;:.,?(){}\\[\\]])`,
+            `(?<other>.+)`
+        ].join("|"), "g")
 
         return this.Parse(text, regexp)
     }

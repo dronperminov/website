@@ -1,0 +1,1322 @@
+<p class="note">Цикл статей о создании собственного парсера выражений: от токенизации до полноценного синтаксического разбора.</p>
+
+<h2>Оглавление цикла</h2>
+
+<ul>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">Часть 1. Токенизация</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">Часть 2. Вычисление выражения в обратной польской записи</a></li>
+    <li>Часть 3. Алгоритм сортировочной станции (вы находитесь здесь)</li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">Часть 4. Парсер рекурсивного спуска</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-five-pratt-parser">Часть 5. Парсер Пратта</a></li>
+</ul>
+
+<p>В <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">предыдущей части</a> мы реализовали калькулятор выражений, записанных в обратной польской записи – структуру, идеально подходящую для быстрого и однозначного вычисления выражений. Однако остаётся вопрос: как получить RPN из привычной инфиксной записи (с операциями, скобками, переменными и функциями)?</p>
+
+<p>Один из классических ответов на этот вопрос – алгоритм сортировочной станции (Shunting Yard Algorithm), предложенный Дейкстрой. Он позволяет преобразовать выражение вида:</p>
+
+<div class="code">
+<pre class="code-no-lines" data-lang="math">
+3 + 4 * 8 / (5 - 3)^2^3
+</pre>
+</div>
+
+<p>в обратную польскую запись:</p>
+
+<div class="code">
+<pre class="code-no-lines" data-lang="math">
+3 4 8 * 5 3 - 2 3 ^ ^ / +
+</pre>
+</div>
+
+<p>Именно этот алгоритм мы реализуем в данной части. При этом мы:</p>
+
+<ul>
+    <li>будем парсить выражения, содержащие числа, константы, функции и переменные;</li>
+    <li>научимся отличать вычитание от унарного минуса;</li>
+    <li>будем проверять синтаксическую корректность выражения и выдавать соответствующие сообщения об ошибках.</li>
+</ul>
+
+<h2>Алгоритм сортировочной станции</h2>
+
+<p>В целом отличное описание алгоритма есть на <a class="link" href="https://en.wikipedia.org/wiki/Shunting_yard_algorithm#The_algorithm_in_detail">википедии</a>, но в нём нет двух важных деталей: обработки унарного минуса и проверки ошибок. В этой статье мы исправим это ужасное недоразумение, но давайте для начала разберёмся с базовым алгоритмом:</p>
+
+<ol>
+    <li>Создаём пустой стек <code>stack</code> и пустой выходной массив <code>rpn</code>;</li>
+    <li>Идём по списку токенов от первого к последнему;</li>
+    <ul>
+        <li>если токен является <b class="highlight">числом</b>, <b class="highlight">константой</b> или <b class="highlight">переменной</b>, записываем его в <code>rpn</code>;</li>
+        <li>если токен является <b class="highlight">функцией</b>, кладём его в стек;</li>
+        <li>если токен является <b class="highlight">разделителем аргументов</b> (<code>,</code>), то перекладываем токены из стека в <code>rpn</code>, пока на вершине стека не окажется <code>(</code> (если стек закончился раньше, в выражении пропущена открывающая скобка);</li>
+        <li>если токен является <b class="highlight">операцией</b> <code>o<sub>1</sub></code>, то:
+            <ul>
+                <li>перекладываем из стека в выходной массив операции <code>o<sub>2</sub></code>, пока их приоритет выше приоритета <code>o<sub>1</sub></code> (или приоритеты равны, если <code>o<sub>1</sub></code> является левоассоциативной);</li>
+                <li>после чего кладём операцию <code>o<sub>1</sub></code> в стек;</li>
+            </ul>
+        </li>
+        <li>если токен является <b class="highlight">открывающей скобкой</b> <code>(</code>, то кладём его в стек;</li>
+        <li>если токен является <b class="highlight">закрывающей скобкой</b> <code>)</code>, то:
+            <ul>
+                <li>перекладываем из стека в выходной массив токены, пока на вершине стека не окажется открывающая скобка<code>(</code> (если стек закончился раньше, в выражении пропущена открывающая скобка);</li>
+                <li>выбрасываем открывающую скобку из стека;</li>
+                <li>если на вершине стека оказалась <b class="highlight">функция</b>, то перекладываем её из стека в выходной массив;</li>
+            </ul>
+        </li>
+    </ul>
+    <li>перекладываем оставшиеся в стеке токены в выходной массив (если встретится <code>(</code>, то в выражении пропущена закрывающая скобка).</li>
+</ol>
+
+<p>Знаю, знаю, знаю. Алгоритм звучит не так уж и просто, поэтому давайте рассмотрим на конкретном примере:</p>
+
+<div class="code">
+<pre class="code-no-lines" data-lang="math">
+3 + 4 * 8 / (5 - 3)^2
+</pre>
+</div>
+
+<div class="article-center">
+    <table>
+        <tr>
+            <th>шаг</th>
+            <th>токен</th>
+            <th>действие</th>
+            <th>стек</th>
+            <th>rpn</th>
+        </tr>
+
+        <tr>
+            <td>1</td>
+            <td><code>3</code></td>
+            <td>кладём <code>3</code> в rpn</td>
+            <td><code>[]</code></td>
+            <td><code>[3]</code></td>
+        </tr>
+
+        <tr>
+            <td>2</td>
+            <td><code>+</code></td>
+            <td>кладём <code>+</code> в стек</td>
+            <td><code>[+]</code></td>
+            <td><code>[3]</code></td>
+        </tr>
+
+        <tr>
+            <td>3</td>
+            <td><code>4</code></td>
+            <td>кладём <code>4</code> в rpn</td>
+            <td><code>[+]</code></td>
+            <td><code>[3, 4]</code></td>
+        </tr>
+
+        <tr>
+            <td>4</td>
+            <td><code>*</code></td>
+            <td>кладём <code>*</code> в стек</td>
+            <td><code>[+, *]</code></td>
+            <td><code>[3, 4]</code></td>
+        </tr>
+
+        <tr>
+            <td>5</td>
+            <td><code>8</code></td>
+            <td>кладём <code>8</code> в rpn</td>
+            <td><code>[+, *]</code></td>
+            <td><code>[3, 4, 8]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">6</td>
+            <td rowspan="2"><code>/</code></td>
+            <td>перекладываем <code>*</code> из стека в rpn</td>
+            <td><code>[+]</code></td>
+            <td><code>[3, 4, 8, *]</code></td>
+        </tr>
+
+        <tr>
+            <td>кладём <code>/</code> в стек</td>
+            <td><code>[+, /]</code></td>
+            <td><code>[3, 4, 8, *]</code></td>
+        </tr>
+
+        <tr>
+            <td>7</td>
+            <td><code>(</code></td>
+            <td>кладём <code>(</code> в стек</td>
+            <td><code>[+, /, (]</code></td>
+            <td><code>[3, 4, 8, *]</code></td>
+        </tr>
+
+        <tr>
+            <td>8</td>
+            <td><code>5</code></td>
+            <td>кладём <code>5</code> в rpn</td>
+            <td><code>[+, /, (]</code></td>
+            <td><code>[3, 4, 8, *, 5]</code></td>
+        </tr>
+
+        <tr>
+            <td>9</td>
+            <td><code>-</code></td>
+            <td>кладём <code>-</code> в стек</td>
+            <td><code>[+, /, (, -]</code></td>
+            <td><code>[3, 4, 8, *, 5]</code></td>
+        </tr>
+
+        <tr>
+            <td>10</td>
+            <td><code>3</code></td>
+            <td>кладём <code>3</code> в rpn</td>
+            <td><code>[+, /, (, -]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">11</td>
+            <td rowspan="2"><code>)</code></td>
+            <td>перекладываем <code>-</code> из стека в rpn</td>
+            <td><code>[+, /, (]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3, -]</code></td>
+        </tr>
+
+        <tr>
+            <td>выкидываем <code>(</code> из стека</td>
+            <td><code>[+, /]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3, -]</code></td>
+        </tr>
+
+        <tr>
+            <td>12</td>
+            <td><code>^</code></td>
+            <td>кладём <code>^</code> в стек</td>
+            <td><code>[+, /, ^]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3, -]</code></td>
+        </tr>
+
+        <tr>
+            <td>13</td>
+            <td><code>2</code></td>
+            <td>кладём <code>2</code> в rpn</td>
+            <td><code>[+, /, ^]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3, -, 2]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="3" colspan="2">14</td>
+            <td>перекладываем <code>^</code> из стека в rpn</td>
+            <td><code>[+, /]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3, -, 2, ^]</code></td>
+        </tr>
+
+        <tr>
+            <td>перекладываем <code>/</code> из стека в rpn</td>
+            <td><code>[+]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3, -, 2, ^, /]</code></td>
+        </tr>
+
+        <tr>
+            <td>перекладываем <code>+</code> из стека в rpn</td>
+            <td><code>[]</code></td>
+            <td><code>[3, 4, 8, *, 5, 3, -, 2, ^, /, +]</code></td>
+        </tr>
+    </table>
+</div>
+
+<p>Слишком простой пример? Давайте рассмотрим кое-что по-настоящему забористое:</p>
+
+<div class="code">
+<pre class="code-no-lines" data-lang="math">
+2 * 9 / 2.5 + cos(pi) * max(3^2 * (7 - 1), x)
+</pre>
+</div>
+
+<div class="article-center">
+    <table>
+        <tr>
+            <th>шаг</th>
+            <th>токен</th>
+            <th>действие</th>
+            <th>стек</th>
+            <th>rpn</th>
+        </tr>
+
+        <tr>
+            <td>1</td>
+            <td><code>2</code></td>
+            <td>кладём <code>2</code> в rpn</td>
+            <td><code>[]</code></td>
+            <td><code>[2]</code></td>
+        </tr>
+
+        <tr>
+            <td>2</td>
+            <td><code>*</code></td>
+            <td>кладём <code>*</code> в стек</td>
+            <td><code>[*]</code></td>
+            <td><code>[2]</code></td>
+        </tr>
+
+        <tr>
+            <td>3</td>
+            <td><code>9</code></td>
+            <td>кладём <code>9</code> в rpn</td>
+            <td><code>[*]</code></td>
+            <td><code>[2, 9]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">4</td>
+            <td rowspan="2"><code>/</code></td>
+            <td>перекладываем <code>*</code> из стека в rpn</td>
+            <td><code>[]</code></td>
+            <td><code>[2, 9, *]</code></td>
+        </tr>
+
+        <tr>
+            <td>кладём <code>/</code> в стек</td>
+            <td><code>[/]</code></td>
+            <td><code>[2, 9, *]</code></td>
+        </tr>
+
+        <tr>
+            <td>5</td>
+            <td><code>2.5</code></td>
+            <td>кладём <code>2.5</code> в rpn</td>
+            <td><code>[/]</code></td>
+            <td><code>[2, 9, *, 2.5]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">6</td>
+            <td rowspan="2"><code>+</code></td>
+            <td>перекладываем <code>/</code> из стека в rpn</td>
+            <td><code>[]</code></td>
+            <td><code>[2, 9, *, 2.5, /]</code></td>
+        </tr>
+
+        <tr>
+            <td>кладём <code>+</code> в стек</td>
+            <td><code>[+]</code></td>
+            <td><code>[2, 9, *, 2.5, /]</code></td>
+        </tr>
+
+        <tr>
+            <td>7</td>
+            <td><code>cos</code></td>
+            <td>кладём <code>cos</code> в стек</td>
+            <td><code>[+, cos]</code></td>
+            <td><code>[2, 9, *, 2.5, /]</code></td>
+        </tr>
+
+        <tr>
+            <td>8</td>
+            <td><code>(</code></td>
+            <td>кладём <code>(</code> в стек</td>
+            <td><code>[+, cos, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /]</code></td>
+        </tr>
+
+        <tr>
+            <td>9</td>
+            <td><code>pi</code></td>
+            <td>кладём <code>pi</code> в rpn</td>
+            <td><code>[+, cos, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">10</td>
+            <td rowspan="2"><code>)</code></td>
+            <td>выкидываем <code>(</code> из стека</td>
+            <td><code>[+, cos]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi]</code></td>
+        </tr>
+
+        <tr>
+            <td>перекладываем <code>cos</code> из стека в rpn</td>
+            <td><code>[+]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos]</code></td>
+        </tr>
+
+        <tr>
+            <td>11</td>
+            <td><code>*</code></td>
+            <td>кладём <code>*</code> в стек</td>
+            <td><code>[+, *]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos]</code></td>
+        </tr>
+
+        <tr>
+            <td>12</td>
+            <td><code>max</code></td>
+            <td>кладём <code>max</code> в стек</td>
+            <td><code>[+, *, max]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos]</code></td>
+        </tr>
+
+        <tr>
+            <td>13</td>
+            <td><code>(</code></td>
+            <td>кладём <code>(</code> в стек</td>
+            <td><code>[+, *, max, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos]</code></td>
+        </tr>
+
+        <tr>
+            <td>14</td>
+            <td><code>3</code></td>
+            <td>кладём <code>3</code> в rpn</td>
+            <td><code>[+, *, max, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3]</code></td>
+        </tr>
+
+        <tr>
+            <td>15</td>
+            <td><code>^</code></td>
+            <td>кладём <code>^</code> в стек</td>
+            <td><code>[+, *, max, (, ^]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3]</code></td>
+        </tr>
+
+        <tr>
+            <td>16</td>
+            <td><code>2</code></td>
+            <td>кладём <code>2</code> в rpn</td>
+            <td><code>[+, *, max, (, ^]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">17</td>
+            <td rowspan="2"><code>*</code></td>
+            <td>перекладываем <code>^</code> из стека в rpn</td>
+            <td><code>[+, *, max, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^]</code></td>
+        </tr>
+
+        <tr>
+            <td>кладём <code>*</code> в стек</td>
+            <td><code>[+, *, max, (, *]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^]</code></td>
+        </tr>
+
+        <tr>
+            <td>18</td>
+            <td><code>(</code></td>
+            <td>кладём <code>(</code> в стек</td>
+            <td><code>[+, *, max, (, *, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^]</code></td>
+        </tr>
+
+        <tr>
+            <td>19</td>
+            <td><code>7</code></td>
+            <td>кладём <code>7</code> в rpn</td>
+            <td><code>[+, *, max, (, *, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7]</code></td>
+        </tr>
+
+        <tr>
+            <td>20</td>
+            <td><code>-</code></td>
+            <td>кладём <code>-</code> в стек</td>
+            <td><code>[+, *, max, (, *, (, -]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7]</code></td>
+        </tr>
+
+        <tr>
+            <td>21</td>
+            <td><code>1</code></td>
+            <td>кладём <code>1</code> в rpn</td>
+            <td><code>[+, *, max, (, *, (, -]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">22</td>
+            <td rowspan="2"><code>)</code></td>
+            <td>перекладываем <code>-</code> из стека в rpn</td>
+            <td><code>[+, *, max, (, *, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -]</code></td>
+        </tr>
+
+        <tr>
+            <td>выкидываем <code>(</code> из стека</td>
+            <td><code>[+, *, max, (, *]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -]</code></td>
+        </tr>
+
+        <tr>
+            <td>23</td>
+            <td><code>,</code></td>
+            <td>перекладываем <code>*</code> из стека в rpn</td>
+            <td><code>[+, *, max, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -, *]</code></td>
+        </tr>
+
+        <tr>
+            <td>24</td>
+            <td><code>x</code></td>
+            <td>кладём <code>x</code> в rpn</td>
+            <td><code>[+, *, max, (]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -, *, x]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2">25</td>
+            <td rowspan="2"><code>)</code></td>
+            <td>выкидываем <code>(</code> из стека</td>
+            <td><code>[+, *, max]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -, *, x]</code></td>
+        </tr>
+
+        <tr>
+            <td>перекладываем <code>max</code> из стека в rpn</td>
+            <td><code>[+, *]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -, *, x, max]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="2" colspan="2">26</td>
+            <td>перекладываем <code>*</code> из стека в rpn</td>
+            <td><code>[+]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -, *, x, max, *]</code></td>
+        </tr>
+
+        <tr>
+            <td>перекладываем <code>+</code> из стека в rpn</td>
+            <td><code>[]</code></td>
+            <td><code>[2, 9, *, 2.5, /, pi, cos, 3, 2, ^, 7, 1, -, *, x, max, *, +]</code></td>
+        </tr>
+    </table>
+</div>
+
+<p>Как видите, алгоритм не настолько и ужасен. Давайте теперь реализуем его!</p>
+
+<h2>Алгоритм сортировочной станции: базовая реализация</h2>
+
+<p>Создадим файл <code>shunting_yard_parser.js</code>, содержащий класс <code>ShuntingYardParser</code>. Определим в конструкторе приоритеты и ассоциативность обрабатываемых операций:</p>
+
+<div class="code">
+    <div class="code-title">Заготовка парсера</div>
+<pre data-lang="js">
+class ShuntingYardParser {
+    constructor() {
+        this.operators = {
+            "+": {precedence: 1, associative: "left"},
+            "-": {precedence: 1, associative: "left"},
+            "*": {precedence: 2, associative: "left"},
+            "/": {precedence: 2, associative: "left"},
+            "^": {precedence: 3, associative: "right"},
+            "~": {precedence: 3, associative: "right"}
+        }
+    }
+}
+</pre>
+</div>
+
+<p>Сам алгоритм мы реализуем внутри метода <code>parse(tokens)</code>:</p>
+
+<div class="code">
+    <div class="code-title">Алгоритм сортировочной станции</div>
+<pre data-lang="js">
+parse(tokens) {
+    const stack = []
+    const rpn = []
+
+    for (const token of tokens) {
+        if (token.type === "number" || token.type === "constant" || token.type === "variable") {
+            rpn.push(token)
+        }
+        else if (token.type === "function") {
+            stack.push(token)
+        }
+        else if (token.type === "delimeter") {
+            while (stack.length && stack[stack.length - 1].type !== "left_parenthesis")
+                rpn.push(stack.pop())
+
+            if (stack.length === 0)
+                throw new Error(`"${token.value}" outside a function or without "(" (${token.start}:${token.end})`)
+        }
+        else if (token.type === "operator") {
+            while (stack.length && this.isMorePrecedence(stack[stack.length - 1], this.operators[token.value]))
+                rpn.push(stack.pop())
+
+            stack.push(token)
+        }
+        else if (token.type === "left_parenthesis") {
+            stack.push(token)
+        }
+        else if (token.type === "right_parenthesis") {
+            while (stack.length && stack[stack.length - 1].type !== "left_parenthesis")
+                rpn.push(stack.pop())
+
+            if (stack.length === 0)
+                throw new Error(`"(" missing before "${token.value}" (${token.start}:${token.end})`)
+
+            stack.pop()
+
+            if (stack.length && stack[stack.length - 1].type === "function")
+                rpn.push(stack.pop())
+        }
+
+        prev = token
+    }
+
+    while (stack.length) {
+        const token = stack.pop()
+
+        if (token.type === "left_parenthesis")
+            throw new Error(`the brackets are disbalanced (${token.start}:${token.end})`)
+
+        rpn.push(token)
+    }
+
+    return rpn
+}
+
+isMorePrecedence(top, operator) {
+    if (top.type != "operator")
+        return false
+
+    if (operator.associative === "right")
+        return this.operators[top.value].precedence &gt; operator.precedence
+
+    return this.operators[top.value].precedence &gt;= operator.precedence
+}
+</pre>
+</div>
+
+<p>Не так уж и сложно, правда? Давайте проверим, что наш парсер работает верно:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер</div>
+<pre data-lang="js">
+const tokenizer = new ExpressionTokenizer({
+    functions: ["sin", "cos", "tan", "max"],
+    constants: ["pi", "e"]
+})
+
+const parser = new ShuntingYardParser()
+
+parser.parse(tokenizer.tokenize("3 + 4")) // 3 4 +
+parser.parse(tokenizer.tokenize("1 + 2 * 3")) // 1 2 3 * +
+parser.parse(tokenizer.tokenize("3 + 4 * 8 / (5 - 3)^2")) // 3 4 8 * 5 3 - 2 ^ / +
+parser.parse(tokenizer.tokenize("max(sin(x), cos(y))")) // x sin y cos max
+</pre>
+</div>
+
+<h2>Добавляем поддержку унарного минуса</h2>
+
+<p>Пришло время разобраться, как отличить, когда <code>-</code> является вычитанием, а когда должен быть унарным минусом. Рассмотрим возможные варианты появления унарного минуса в выражении:</p>
+
+<ul>
+    <li><code>-5</code>, <code>-(1+4)</code> – с него может начинаться выражение;</li>
+    <li><code>2 + -1</code>, <code>x^-3</code> – может идти после бинарной операции;</li>
+    <li><code>max(-4, x)</code>, <code>2 + (-4 + 8)</code> – может идти после открывающей скобки;</li>
+    <li><code>max(4, -6)</code> – может идти после разделителя аргументов.</li>
+</ul>
+
+<p>Во всех остальных (корректных) случаях <code>-</code> является вычитанием. Получается, нам достаточно проверить, какой токен был перед <code>-</code>, и при выполнении описанных выше условий заменить <code>-</code> на <code>~</code>.</p>
+
+<p>Заведём перед циклом переменную <code>prev</code>, изначально равную <code>null</code>, что будет означать, что обрабатывается первый токен выражения. Добавим метод проверки токена на унарность <code>isUnary</code> и испольуем его при обработке оператора:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем обработку унарного минуса</div>
+<pre data-lang="js">
+// может ли токен быть унарным
+isUnary(prev) {
+    return prev === null || prev.type === "operator" || prev.type === "delimeter" || prev.type === "left_parenthesis"
+}
+
+parse(tokens) {
+    const stack = []
+    const rpn = []
+    let prev = null // предыдущий токен
+
+    for (token of tokens) {
+        ...
+        else if (token.type === "operator") {
+            // если токен - является унарным, заменяем его на ~
+            if (token.value === "-" && this.isUnary(prev))
+                token.value = "~"
+
+            ...
+        }
+
+        prev = token // запоминаем обработанный токен
+    }
+
+    ...
+}
+</pre>
+</div>
+
+<p>Что и всё? Да! Вот так просто добавляется обработка унарного минуса. Проверим в работе:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("-1")) // 1 ~
+parser.parse(tokenizer.tokenize("-(1+4)")) // 1 4 + ~
+parser.parse(tokenizer.tokenize("2 - -3")) // 2 3 ~ -
+parser.parse(tokenizer.tokenize("-----5")) // 5 ~ ~ ~ ~ ~
+parser.parse(tokenizer.tokenize("max(-4, -5)")) // 4 ~ 5 ~ max
+parser.parse(tokenizer.tokenize("-4^-2^-3")) // 4 2 3 ~ ^ ~ ^ ~
+</pre>
+</div>
+
+<p>Теперь у нас есть парсер, использующий алгоритм сортировочной станции, способный перевести математическое выражение из инфиксной формы в постфиксную. Но что произойдёт, если подать ему на вход такие выражения:</p>
+
+<div class="code">
+    <div class="code-title">Что-то тут не так</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("1 2 +")) // 1 2 +
+parser.parse(tokenizer.tokenize("5 + + 7")) // 5 + 7 +
+parser.parse(tokenizer.tokenize("1 2 3 + (,) - * / 4 5 6 (^)")) // 1 2 3 + * 4 5 6 ^ / -
+parser.parse(tokenizer.tokenize("sin cos 2 max 7")) // 2 7 max cos sin
+parser.parse(tokenizer.tokenize("max(,)")) // max
+parser.parse(tokenizer.tokenize("5 + 6 +")) // 5 6 + +
+</pre>
+</div>
+
+<p>Очевидно, что текущая версия алгоритма не способна отличать корректные выражения от некорректных, а потому она нуждается в доработке.</p>
+
+<h2>Проверяем выражение на корректность</h2>
+
+<p>На интуитивном уровне понятно, почему приведённые выше выражения не являются корректными. После чисел, констант и переменных с функциями (или проще говоря операндов) должна идти операция, а не ещё один операнд. При этом аргументы функции должны быть обёрнуты в круглые скобки. Мы можем эффективно отлавливать синтаксические ошибки, если введём ожидаемое состояние – <code>expect</code>, которое будет проверяться в каждом из условий. Изначально мы ожидаем операнд (так как выражения начинаются не с операций, а унарный минус тоже будем считать операндом).</p>
+
+<p>Проведём также небольшой рефакторинг кода: вынесем обработку различных типов токенов в соответствующие методы, после чего добавим проверку на синтаксические ошибки:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем синтаксические ошибки</div>
+<pre data-lang="js">
+parse(tokens) {
+    const stack = []
+    const rpn = []
+    let prev = null
+    let expect = "operand"
+
+    for (const token of tokens) {
+        if (token.type === "number" || token.type === "constant" || token.type === "variable") {
+            expect = this.parseOperand(token, rpn, expect)
+        }
+        else if (token.type === "function") {
+            expect = this.parseFunction(token, stack, expect)
+        }
+        else if (token.type === "delimeter") {
+            expect = this.parseDelimeter(token, stack, rpn, expect)
+        }
+        else if (token.type === "operator" && token.value === "-" && this.isUnary(prev)) {
+            expect = this.parseUnary(token, stack, expect)
+        }
+        else if (token.type === "operator") {
+            expect = this.parseOperator(token, stack, rpn, expect)
+        }
+        else if (token.type === "left_parenthesis") {
+            expect = this.parseLeftParenthesis(token, stack, expect)
+        }
+        else if (token.type === "right_parenthesis") {
+            expect = this.parseRightParenthesis(token, stack, rpn, expect)
+        }
+        else
+            throw new Error(`got invalid token: "${token.value}" (${token.start}:${token.end})`)
+
+        prev = token
+    }
+
+    this.parseLastOperators(stack, rpn, expect)
+    return rpn
+}
+
+// обработка операции
+parseOperand(token, rpn, expect) {
+    if (expect !== "operand")
+        throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+    rpn.push(token)
+    return "operator"
+}
+
+// обработка функции
+parseFunction(token, stack, expect) {
+    if (expect !== "operand")
+        throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+    stack.push(token)
+    return "("
+}
+
+// обработка разделителя аргументов
+parseDelimeter(token, stack, rpn, expect) {
+    if (expect !== "operator")
+        throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+    while (stack.length && stack[stack.length - 1].type !== "left_parenthesis")
+        rpn.push(stack.pop())
+
+    if (stack.length === 0)
+        throw new Error(`"${token.value}" outside a function or without "(" (${token.start}:${token.end})`)
+
+    return "operand"
+}
+
+// обработка унарного минуса
+parseUnary(token, stack, expect) {
+    if (expect !== "operand")
+        throw new Error(`expected ${expect}, but got unary "${token.value}" (${token.start}:${token.end})`)
+
+    token.value = "~"
+    stack.push(token)
+    return "operand"
+}
+
+// обработка операции
+parseOperator(token, stack, rpn, expect) {
+    if (expect !== "operator")
+        throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+    while (stack.length && this.isMorePrecedence(stack[stack.length - 1], this.operators[token.value]))
+        rpn.push(stack.pop())
+
+    stack.push(token)
+    return "operand"
+}
+
+// обработка открывающей скобки
+parseLeftParenthesis(token, stack, expect) {
+    if (expect === "operator")
+        throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+    stack.push(token)
+    return "operand"
+}
+
+// обработка закрывающей скобки
+parseRightParenthesis(token, stack, rpn, expect) {
+    if (expect !== "operator")
+        throw new Error(`expect ${expect}, but got ")" (${token.start}:${token.end})`)
+
+    while (stack.length && stack[stack.length - 1].type !== "left_parenthesis")
+        rpn.push(stack.pop())
+
+    if (stack.length === 0)
+        throw new Error(`"(" missing before "${token.value}" (${token.start}:${token.end})`)
+
+    stack.pop()
+
+    if (stack.length && stack[stack.length - 1].type === "function")
+        rpn.push(stack.pop())
+
+    return "operator"
+}
+
+// обработка оставшихся в стеке операций
+parseLastOperators(stack, rpn, expect) {
+    while (stack.length) {
+        const token = stack.pop()
+
+        if (expect != "operator")
+            throw new Error(`expect ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+        if (token.type === "left_parenthesis")
+            throw new Error(`the brackets are disbalanced (${token.start}:${token.end})`)
+
+        rpn.push(token)
+    }
+}
+</pre>
+</div>
+
+<p>Да, цена проверки синтаксиса в алгоритме сортировочной станции – много дополнительных строк кода. Именно из-за этой особенности его редко используют в задачах, где проверка корректности важна. В будущих статьях мы реализуем гораздо более элегантные парсеры, в которых проверка синтаксиса будет осуществляться гораздо проще. Зато посмотрите, что будет на тех же выражениях теперь:</p>
+
+<div class="code">
+    <div class="code-title">Теперь почти всё так</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("1 2 +")) // Error: expected "operator", but got "2" (2:3)
+parser.parse(tokenizer.tokenize("5 + + 7")) // Error: expected operand, but got "+" (4:5)
+parser.parse(tokenizer.tokenize("1 2 3 + (,) - * / 4 5 6 (^)")) // expected "operator", but got "2" (2:3)
+parser.parse(tokenizer.tokenize("sin cos 2 max 7")) // Error: "(", but got "cos" (4:7)
+parser.parse(tokenizer.tokenize("max(,)")) // Error: expected operand, but got "," (4:5)
+parser.parse(tokenizer.tokenize("5 + 6 +")) // Error: expect operand, but got "+" (6:7)
+parser.parse(tokenizer.tokenize("1 + (2")) // Error: the brackets are disbalanced (4:5)
+parser.parse(tokenizer.tokenize("sin(7))")) // Error: "(" missing before ")" (6:7)
+
+// а вот тут не всё в порядке
+parser.parse(tokenizer.tokenize("sin(1, 2, 3, 4)")) // 1 2 3 4 sin
+parser.parse(tokenizer.tokenize("max(sin(1, 2))")) // 1 2 sin max
+parser.parse(tokenizer.tokenize("max(1)")) // 1 max
+</pre>
+</div>
+
+<p>Отлично! Теперь абсолютное большинство синтаксических ошибок успешно отлавливаются парсером.</p>
+
+<p>Большинство, но не все. Сейчас всё ещё можно написать выражение <code>sin(1, 2, 3, 4)</code> и оно будет успешно разобрано. Большинство ошибок такого рода будут успешно обнаружены на этапе вычисления выражения, однако даже там выражение <code>max(sin(1, 2))</code> будет успешно вычислено. Поэтому нам никак нельзя оставить это без внимания.</p>
+
+<p>Чтобы отлавливать такие ошибки в этом парсере, нам нужно завести дополнительный стек <code>argsCount</code> для хранения количества обработанных аргументов функции:</p>
+
+<ul>
+    <li>Когда будет парситься <b class="highlight">функция</b>, мы будет добавлять в этот стек <code>1</code>;</li>
+    <li>Когда будет парситься <b class="highlight">разделитель аргументов</b>, будем увеличивать значение на вершине этого стека на 1.</li>
+    <li>А когда будем выталкивать из основного стека функцию, будем также выталкивать количество аргументов из <code>argsCount</code> и сравнивать с ожидаемым (да, для этого нам придётся передать в парсер словарь с функциями).</li>
+</ul>
+
+<p>Реализуем же это:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем проверку количества аргументов</div>
+<pre data-lang="js">
+constructor(functions) {
+    this.functions = functions
+    ...
+}
+
+parse(tokens) {
+    ...
+    const argsCount = []
+
+    for (const token of tokens) {
+        ...
+        else if (token.type === "function") {
+            expect = this.parseFunction(token, stack, argsCount, expect)
+        }
+        else if (token.type === "delimeter") {
+            expect = this.parseDelimeter(token, stack, rpn, argsCount, expect)
+        }
+        else if (token.type === "right_parenthesis") {
+            expect = this.parseRightParenthesis(token, stack, rpn, argsCount, expect)
+        }
+        ...
+    }
+    ...
+}
+
+parseFunction(token, stack, argsCount, expect) {
+    ...
+    argsCount.push(1)
+    return "("
+}
+
+parseDelimeter(token, stack, rpn, argsCount, expect) {
+    ...
+
+    if (argsCount.length === 0)
+        throw new Error(`"${token.value}" outside a function (${token.start}:${token.end})`)
+
+    argsCount[argsCount.length - 1]++
+    return "operand"
+}
+
+parseRightParenthesis(token, stack, rpn, argsCount, expect) {
+    ...
+
+    if (stack.length && stack[stack.length - 1].type === "function") {
+        const func = this.functions[stack[stack.length - 1]]
+        const args = argsCount.pop()
+
+        if (args != func.args)
+            throw new Error(`invalid "${func.value}" arguments count: expected ${func.args}, got ${args} "${token.value}" (${token.start}:${token.end})`)
+
+        rpn.push(stack.pop())
+    }
+
+    return "operator"
+}
+</pre>
+</div>
+
+<div class="code">
+    <div class="code-title">Теперь всё так!</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("sin(1, 2, 3, 4)")) // Error: invalid "sin" arguments count: expected 1, got 4 ")" (14:15)
+parser.parse(tokenizer.tokenize("max(sin(1, 2))")) // Error: invalid "sin" arguments count: expected 1, got 2 ")" (12:13)
+parser.parse(tokenizer.tokenize("max(1)")) // Error: invalid "max" arguments count: expected 2, got 1 ")" (5:6)
+</pre>
+</div>
+
+<p>Что ж, вот наконец-то и готов наш парсер. Теперь ни одна синтаксическая ошибка не проскочит мимо него, но как же много в нём строчек кода (целых 167)! Это даже больше, чем токенизатор и калькулятор вместе взятые. Но такова цена использования надёжной версии алгоритма сортировочной станции.</p>
+
+<h2>Собираем всё вместе</h2>
+
+<p>На этом этапе у нас наконец есть все слагаемые полноценного парсера математических выражениий: токенизатор, синтаксический анализатор и калькулятор. Давайте создадим файл <code>expression_parser.js</code> с классом <code>ExpressionParser</code>, внутри которого соберём все элементы воедино. Чтобы можно было вычислять выражения одним лишь вызовом этого класса, а не описывать каждый раз функции, константы, операции и т.д.</p>
+
+<h3>Что нам потребуется?</h3>
+
+<ul>
+    <li>Описание всех функций, констант и операций, с которыми должен работать наш парсер;</li>
+    <li>Словарь <code>variables</code>, в котором будут храниться значения переменных.</li>
+    <li>Метод <code>setVariable(name, value)</code>, с помощью которого можно будет задавать значения переменным;</li>
+    <li>Собственно токенизатор, парсер и калькулятор, созданные нами ранее.</li>
+</ul>
+
+<div class="code">
+    <div class="code-title">Создаём полноценный парсер</div>
+<pre data-lang="js">
+class ExpressionParser {
+    constructor(expression) {
+        const functions = this.initFunctions()
+        const constants = this.initConstans()
+        const operators = this.initOperators()
+
+        const tokenizer = new ExpressionTokenizer({
+            functions: Object.keys(functions),
+            constants: Object.keys(constants)
+        })
+
+        const parser = new ShuntingYardParser(functions)
+
+        this.evaluator = new ExpressionEvaluator({constants, functions, operators})
+        this.rpn = parser.parse(tokenizer.tokenize(expression))
+        this.variables = {}
+    }
+
+    setVariable(name, value) {
+        this.variables[name] = value
+    }
+
+    evaluate() {
+        return this.evaluator.evaluate({rpn: this.rpn, variables: this.variables})
+    }
+
+    initFunctions() {        
+        return {
+            "sin": {args: 1, evaluate: Math.sin},
+            "cos": {args: 1, evaluate: Math.cos},
+            "tan": {args: 1, evaluate: Math.tan},
+            "max": {args: 2, evaluate: Math.max},
+            // и многие многие другие
+        }
+    }
+
+    initConstans() {
+        return {
+            "pi": Math.PI,
+            "e": Math.E
+        }
+    }
+
+    initOperators() {
+        return {
+            "+": {args: 2, evaluate: (arg1, arg2) => arg1 + arg2},
+            "-": {args: 2, evaluate: (arg1, arg2) => arg1 - arg2},
+            "*": {args: 2, evaluate: (arg1, arg2) => arg1 * arg2},
+            "/": {args: 2, evaluate: (arg1, arg2) => arg1 / arg2},
+            "^": {args: 2, evaluate: (arg1, arg2) => arg1 ** arg2},
+            "~": {args: 1, evaluate: (arg) => -arg}
+        }
+    }
+}
+</pre>
+</div>
+
+<p>Теперь вычислять выражения станет гораздо проще. Давайте напишем небольшую функцию, позволяющую проверить, что наш парсер работает ожидаемым образом:</p>
+
+<div class="code">
+    <div class="code-title">Тестируем парсер</div>
+<pre data-lang="js">
+function TestParser(expression, expected, variables = {}, eps = 1e-15) {
+    try {
+        const parser = new ExpressionParser(expression)
+
+        for (const [variable, value] of Object.entries(variables))
+            parser.setVariable(variable, value)
+
+        const result = parser.evaluate()
+
+        if (Math.abs(result - expected) < eps)
+            console.log(`%c${expression} = ${result}`, "color: green")
+        else
+            console.log(`%c${expression} = ${result}, but expected ${expected}`, "color: red")
+    }
+    catch (error) {
+        console.log(`%c"${expression}" is invalid: ${error.message}`, expected === null ? "color: green" : "color: red")
+    }
+}
+
+// проверяем корректные выражения
+TestParser("1", 1) // 1 = 1
+TestParser("1 + 2 * 3", 7) // 1 + 2 * 3 = 7
+TestParser("-(1 + 2) * 3 - 4", -13) // -(1 + 2) * 3 - 4 = -13
+TestParser("-2^2", -4) // -2^2 = -4
+TestParser("(-2)^2", 4) // (-2)^2 = 4
+TestParser("-2^-2", -0.25) // -2^-2 = -0.25
+TestParser("(-2)^-2", 0.25) // (-2)^-2 = 0.25
+TestParser("max(5 + 2^3, -7 * -9)", 63) // max(5 + 2^3, -7 * -9) = 63
+TestParser("cos(7 - 5)^2 + sin(4^0.5)^2", 1) // cos(7 - 5)^2 + sin(4^0.5)^2 = 1
+TestParser("sin(x) * (pi/-x - 5)^2", -9, {"x": -Math.PI / 2}) // sin(x) * (pi/-x - 5)^2 = -9
+
+// проверяем некорректные выражения
+TestParser("()", null) // "()" is invalid: expect operand, but got ")" (1:2)
+TestParser("max(1)", null) // "max(1)" is invalid: invalid "max" arguments count: expected 2, got 1 ")" (5:6)
+TestParser("sin(1, 5)", null) // "sin(1, 5)" is invalid: invalid "sin" arguments count: expected 1, got 2 ")" (8:9)
+TestParser("sin cos 2 max 7", null) // "sin cos 2 max 7" is invalid: expected (, but got "cos" (4:7)
+</pre>
+</div>
+
+<h2>Заключение</h2>
+
+<p>Вот оно! Наконец-то! Наш парсер совсем готов! Это стоило нам 220 строк ванильного Javascript кода. Но оно ведь того правда стоило, не так ли? Теперь мы можем обрабатывать любые математические выражения и вычислять их многократно (что имеет смысл только, если выражение содержит переменные).</p>
+
+<h3>Итоговый алгоритм</h3>
+<p>В процессе поиска информации были просмотрены десятки различных статей, посвящённых алгоритму сортировочной станции. И подавляющее большинство из них ограничиваются базовыми выражениями без функций, переменных, унарных операторов и даже операции возведения в степень. А уж алгоритма, проверяющего корректность разбираемого выражения, нет и подавно. Поэтому исправим это недоразумение:</p>
+
+<div class="code">
+    <div class="code-title">Алгоритм сортировочной станции с проверкой корректности</div>
+<pre data-lang="preudo">
+rpn = [] // выражение в обратной польской записи
+stack = [] // стек
+args = [] // стек количества аргументов функций
+expect = "operand" // ожидаемое состояние
+prev = null // прошлый токен
+
+for token in tokens:
+    if token is a constant, number or variable:
+        assert expect is "operand"
+        rpn.push(token)
+        expect = "operator"
+
+    elif token is a function:
+        assert expect is "operand"
+        stack.push(token)
+        args.push(1)
+        expect = "("
+
+    elif token is delimeter:
+        assert expect is "operator"
+        while stack.top is not "(":
+            rpn.push(stack.pop())
+
+        assert stack is not empty and args is not empty
+        args.top++ // увеличиваем количество аргументов функции
+        expect = "operand"
+
+    elif token is "-" operator and prev is null, operator, delimeter or "(":
+        assert expect is "operand"
+        stack.push("~") // меняем токен на унарный
+        expect = "operand"
+
+    elif token is operator:
+        assert expect is "operator"
+        while stack.top is operator and is_more_precedence(stack.top, token):
+            rpn.push(stack.pop())
+
+        stack.push(token)
+        expect = "operand"
+
+    elif token is "(":
+        assert expect is "(" or "operand"
+        stack.push(token)
+        expect = "operand"
+
+    elif token is ")":
+        assert expect is "operator"
+
+        while stack.top is not "(":
+            rpn.push(stack.pop())
+
+        assert stack is not empty
+        stack.pop()
+
+        if stack.top is function:
+            assert args.pop() is equal to function arguments count // проверяем совпадение количества аргументов
+            rpn.push(stack.pop())
+
+        expect = "operator"
+
+    prev = token
+
+while stack is not empty:
+    assert expect is operator and not "("
+    rpn.push(stack.pop())
+</pre>
+</div>
+
+<p>Был бы этот алгоритм в википедии, может и не было бы этой статьи вовсе!</p>
+
+<h3>Куда же без исходников?</h3>
+
+<div class="code">
+    <div class="code-title">Итоговый файл <a class="link" href="/media/articles/{{article.link}}/shunting_yard_parser.js" download>shunting_yard_parser.js</a></div>
+<pre data-lang="js">
+class ShuntingYardParser {
+    constructor(functions) {
+        this.functions = functions
+        this.operators = {
+            "+": {precedence: 1, associative: "left"},
+            "-": {precedence: 1, associative: "left"},
+            "*": {precedence: 2, associative: "left"},
+            "/": {precedence: 2, associative: "left"},
+            "^": {precedence: 3, associative: "right"},
+            "~": {precedence: 3, associative: "right"}
+        }
+    }
+
+    parse(tokens) {
+        const stack = []
+        const argsCount = []
+        const rpn = []
+        let prev = null
+        let expect = "operand"
+
+        for (const token of tokens) {
+            if (token.type === "number" || token.type === "constant" || token.type === "variable") {
+                expect = this.parseOperand(token, rpn, expect)
+            }
+            else if (token.type === "function") {
+                expect = this.parseFunction(token, stack, argsCount, expect)
+            }
+            else if (token.type === "delimeter") {
+                expect = this.parseDelimeter(token, stack, rpn, argsCount, expect)
+            }
+            else if (token.type === "operator" && token.value === "-" && this.isUnary(prev)) {
+                expect = this.parseUnary(token, stack, expect)
+            }
+            else if (token.type === "operator") {
+                expect = this.parseOperator(token, stack, rpn, expect)
+            }
+            else if (token.type === "left_parenthesis") {
+                expect = this.parseLeftParenthesis(token, stack, expect)
+            }
+            else if (token.type === "right_parenthesis") {
+                expect = this.parseRightParenthesis(token, stack, rpn, argsCount, expect)
+            }
+            else
+                throw new Error(`got invalid token: "${token.value}" (${token.start}:${token.end})`)
+
+            prev = token
+        }
+
+        this.parseLastOperators(stack, rpn, expect)
+        return rpn
+    }
+
+    isUnary(prev) {
+        return prev === null || prev.type === "operator" || prev.type === "delimeter" || prev.type === "left_parenthesis"
+    }
+
+    isMorePrecedence(top, operator) {
+        if (top.type !== "operator")
+            return false
+
+        if (operator.associative === "right")
+            return this.operators[top.value].precedence > operator.precedence
+
+        return this.operators[top.value].precedence >= operator.precedence
+    }
+
+    parseOperand(token, rpn, expect) {
+        if (expect !== "operand")
+            throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+        rpn.push(token)
+        return "operator"
+    }
+
+    parseFunction(token, stack, argsCount, expect) {
+        if (expect !== "operand")
+            throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+        stack.push(token)
+        argsCount.push(1)
+        return "("
+    }
+
+    parseDelimeter(token, stack, rpn, argsCount, expect) {
+        if (expect !== "operator")
+            throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+        while (stack.length && stack[stack.length - 1].type !== "left_parenthesis")
+            rpn.push(stack.pop())
+
+        if (stack.length === 0)
+            throw new Error(`"${token.value}" outside a function or without "(" (${token.start}:${token.end})`)
+
+        if (argsCount.length === 0)
+            throw new Error(`"${token.value}" outside a function (${token.start}:${token.end})`)
+
+        argsCount[argsCount.length - 1]++
+        return "operand"
+    }
+
+    parseUnary(token, stack, expect) {
+        if (expect !== "operand")
+            throw new Error(`expected ${expect}, but got unary "${token.value}" (${token.start}:${token.end})`)
+
+        token.value = "~"
+        stack.push(token)
+        return "operand"
+    }
+
+    parseOperator(token, stack, rpn, expect) {
+        if (expect !== "operator")
+            throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+        while (stack.length && this.isMorePrecedence(stack[stack.length - 1], this.operators[token.value]))
+            rpn.push(stack.pop())
+
+        stack.push(token)
+        return "operand"
+    }
+
+    parseLeftParenthesis(token, stack, expect) {
+        if (expect === "operator")
+            throw new Error(`expected ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+        stack.push(token)
+        return "operand"
+    }
+
+    parseRightParenthesis(token, stack, rpn, argsCount, expect) {
+        if (expect !== "operator")
+            throw new Error(`expect ${expect}, but got ")" (${token.start}:${token.end})`)
+
+        while (stack.length && stack[stack.length - 1].type !== "left_parenthesis")
+            rpn.push(stack.pop())
+
+        if (stack.length === 0)
+            throw new Error(`"(" missing before "${token.value}" (${token.start}:${token.end})`)
+
+        stack.pop()
+
+        if (stack.length && stack[stack.length - 1].type === "function") {
+            const func = this.functions[stack[stack.length - 1].value]
+            const args = argsCount.pop()
+
+            if (args != func.args)
+                throw new Error(`invalid "${stack[stack.length - 1].value}" arguments count: expected ${func.args}, got ${args} "${token.value}" (${token.start}:${token.end})`)
+
+            rpn.push(stack.pop())
+        }
+
+        return "operator"
+    }
+
+    parseLastOperators(stack, rpn, expect) {
+        while (stack.length) {
+            const token = stack.pop()
+
+            if (expect != "operator")
+                throw new Error(`expect ${expect}, but got "${token.value}" (${token.start}:${token.end})`)
+
+            if (token.type === "left_parenthesis")
+                throw new Error(`the brackets are disbalanced (${token.start}:${token.end})`)
+
+            rpn.push(token)
+        }
+    }
+}
+</pre>
+</div>
+
+<p>А так же</p>
+
+<ul>
+    <li><a class="link" href="/media/articles/{{article.link}}/expression_tokenizer.js" download>expression_tokenizer.js</a> – токенизатор из <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">первой части</a>;</li>
+    <li><a class="link" href="/media/articles/{{article.link}}/expression_evaluator.js" download>expression_evaluator.js</a> – калькулятор выражений, записаных в обратной польской записи из <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">второй части</a>;</li>
+    <li><a class="link" href="/media/articles/{{article.link}}/expression_parser.js" download>expression_parser.js</a> – парсер математических выражений, использующий алгоритм сортировочной станции из этой части.</li>
+</ul>
+
+<p>В следующих статьях мы напишем два других парсера: алгоритм рекурсивного спуска и парсер Пратта. И всё, что нам потребуется сделать, это заменить создание <code>parser</code> в конструкторе <code>ExpressionParser</code>.</p>
+
+<div class="two-links">
+    <p><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">Часть 2. Вычисление выражения в обратной польской записи</a></p>
+    <p><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">Часть 4. Парсер рекурсивного спуска</a></p>
+</div>

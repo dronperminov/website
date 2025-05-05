@@ -1,0 +1,564 @@
+<p class="note">Цикл статей о создании собственного парсера выражений: от токенизации до полноценного синтаксического разбора.</p>
+
+<h2>Оглавление цикла</h2>
+
+<ul>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">Часть 1. Токенизация</a></li>
+    <li>Часть 2. Вычисление выражения в обратной польской записи (вы находитесь здесь)</li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-three-shunting-yard-parser">Часть 3. Алгоритм сортировочной станции</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">Часть 4: Парсер рекурсивного спуска</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-five-pratt-parser">Часть 5. Парсер Пратта</a></li>
+</ul>
+
+<p>В <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">предыдущей части</a> мы научились превращать строку с математическим выражением в последовательность токенов – чисел, операторов, скобок, функций и других элементов. Но токены сами по себе ничего не вычисляют. Чтобы получить результат, их нужно обработать, и сделать это можно по-разному.</p>
+
+<p>В этой части мы познакомимся с <b class="highlight">обратной польской записью</b> (Reverse Polish Notation, RPN) – универсальным представлением выражения, которое не требует скобок и знания приоритетов операций и реализуем калькулятор, вычисляющий выражения, записанные в этом представлении. Такой формат идеально подходит для вычисления выражений с произвольной структурой и глубиной.</p>
+
+<h2>Что такое польская и обратная польская запись?</h2>
+<p>В привычной записи (её называют <b class="highlight">инфиксной</b>) операторы располагаются между операндами: <code>3 + 4</code>, <code>a * (b + c)</code>, <code>x ^ y</code>.</p>
+
+<p>Однако такая запись требует скобок и таблицы приоритетов, чтобы интерпретировать выражение корректно. Именно из-за этого реализация собственного калькулятора или парсера становится нетривиальной задачей.</p>
+
+<p>В 1920-х годах польский логик Ян Лукасевич предложил запись, в которой операторы располагаются перед операндами. Она и получила название польская запись (<b class="highlight">префиксная</b>):</p>
+
+<div class="code">
+    <div class="code-title">Выражения в префиксной форме</div>
+<pre class="code-no-lines" data-lang="math">
++ 3 4     // вместо 3 + 4
+* + 1 2 3 // вместо (1 + 2) * 3
+</pre>
+</div>
+
+<p>Позже появилась <b class="highlight">обратная польская запись</b> (ОПЗ, <b class="highlight">постфиксная</b>), в которой оператор стоит после операндов. Именно она и используется чаще всего на практике:</p>
+
+<div class="code">
+    <div class="code-title">Выражения в постфиксной форме</div>
+<pre class="code-no-lines" data-lang="math">
+3 4 +     // вместо 3 + 4
+1 2 + 3 * // вместо (1 + 2) * 3
+</pre>
+</div>
+
+<p>Главное преимущество RPN заключается в том, что её можно вычислять без скобок и приоритетов, используя всего лишь стек.</p>
+
+
+<h2>Алгоритм вычисления выражения в ОПЗ</h2>
+<p><b class="highlight">Корректное</b> выражение, записанное в постфиксной форме, вычисляется следующим образом:</p>
+
+<ol>
+    <li>Создаём пустой стек;</li>
+    <li>Идём по списку токенов от первого к последнему;</li>
+    <ul>
+        <li>Если токен является <b class="highlight">числом</b>, <b class="highlight">константой</b> или <b class="highlight">переменной</b> – кладём его значение в стек;</li>
+        <li>Если токен является <b class="highlight">операцией</b> или <b class="highlight">функцией</b> – достаём из стека нужное количество аргументов, вычисляем результат и кладём его обратно в стек (важно: аргументы в стеке идут в обратном порядке);</li>
+    </ul>
+    <li>После обработки всех токенов в стеке должно остаться <b class="highlight">одно</b> число – оно и является значением выражения.</li>
+</ol>
+
+<h3>Разберём на примере</h3>
+
+<p>Рассмотрим выражение, записанное в привычной форме:</p>
+
+<div class="code">
+    <div class="code-title">Выражение в инфиксной форме</div>
+<pre class="code-no-lines" data-lang="math">
+3 + 4 * 8 / (5 - 3)^2^3
+</pre>
+</div>
+
+<p>Чтобы корректно его вычислить, требуется знать:</p>
+
+<ul>
+    <li>порядок выполнения операций;</li>
+    <li>ассоциативность (правая или левая);</li>
+    <li>скобочную структуру.</li>
+</ul>
+
+<p>Но в обратной польской записи всё упрощается. Это же выражение запишется так:</p>
+
+<div class="code">
+    <div class="code-title">Выражение в обратной польской записи</div>
+<pre class="code-no-lines" data-lang="math">
+3 4 8 * 5 3 - 2 3 ^ ^ / +
+</pre>
+</div>
+
+<p>Теперь вычислим его пошагово:</p>
+
+<div class="article-center">
+    <table>
+        <tr>
+            <th>шаг</th>
+            <th>токен</th>
+            <th>действие</th>
+            <th>стек</th>
+        </tr>
+        <tr>
+            <td>1</td>
+            <td><code>"3"</code></td>
+            <td>кладём <code>3</code> в стек</td>
+            <td><code>[3]</code></td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td><code>"4"</code></td>
+            <td>кладём <code>4</code> в стек</td>
+            <td><code>[3, 4]</code></td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td><code>"8"</code></td>
+            <td>кладём <code>8</code> в стек</td>
+            <td><code>[3, 4, 8]</code></td>
+        </tr>
+        <tr>
+            <td rowspan="3">4</td>
+            <td rowspan="3"><code>"*"</code></td>
+            <td>достаём из стека <code>8</code></td>
+            <td><code>[3, 4]</code></td>
+        </tr>
+        <tr>
+            <td>достаём из стека <code>4</code></td>
+            <td><code>[3]</code></td>
+        </tr>
+        <tr>
+            <td>вычисляем <code>4 * 8</code> и кладём <code>32</code> в стек</td>
+            <td><code>[3, 32]</code></td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td><code>"5"</code></td>
+            <td>кладём <code>5</code> в стек</td>
+            <td><code>[3, 32, 5]</code></td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td><code>"3"</code></td>
+            <td>кладём <code>3</code> в стек</td>
+            <td><code>[3, 32, 5, 3]</code></td>
+        </tr>
+        <tr>
+            <td rowspan="3">7</td>
+            <td rowspan="3"><code>"-"</code></td>
+            <td>достаём из стека <code>3</code></td>
+            <td><code>[3, 32, 5]</code></td>
+        </tr>
+        <tr>
+            <td>достаём из стека <code>5</code></td>
+            <td><code>[3, 32]</code></td>
+        </tr>
+        <tr>
+            <td>вычисляем <code>5 - 3</code> и кладём <code>2</code> в стек</td>
+            <td><code>[3, 32, 2]</code></td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td><code>"2"</code></td>
+            <td>кладём <code>2</code> в стек</td>
+            <td><code>[3, 32, 2, 2]</code></td>
+        </tr>
+        <tr>
+            <td>9</td>
+            <td><code>"3"</code></td>
+            <td>кладём <code>3</code> в стек</td>
+            <td><code>[3, 32, 2, 2, 3]</code></td>
+        </tr>
+        <tr>
+            <td rowspan="3">10</td>
+            <td rowspan="3"><code>"^"</code></td>
+            <td>достаём из стека <code>3</code></td>
+            <td><code>[3, 32, 2, 2]</code></td>
+        </tr>
+        <tr>
+            <td>достаём из стека <code>2</code></td>
+            <td><code>[3, 32, 2]</code></td>
+        </tr>
+        <tr>
+            <td>вычисляем <code>2 ^ 3</code> и кладём <code>8</code> в стек</td>
+            <td><code>[3, 32, 2, 8]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="3">11</td>
+            <td rowspan="3"><code>"^"</code></td>
+            <td>достаём из стека <code>8</code></td>
+            <td><code>[3, 32, 2]</code></td>
+        </tr>
+        <tr>
+            <td>достаём из стека <code>2</code></td>
+            <td><code>[3, 32]</code></td>
+        </tr>
+        <tr>
+            <td>вычисляем <code>2 ^ 8</code> и кладём <code>256</code> в стек</td>
+            <td><code>[3, 32, 256]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="3">12</td>
+            <td rowspan="3"><code>"/"</code></td>
+            <td>достаём из стека <code>256</code></td>
+            <td><code>[3, 32]</code></td>
+        </tr>
+        <tr>
+            <td>достаём из стека <code>32</code></td>
+            <td><code>[3]</code></td>
+        </tr>
+        <tr>
+            <td>вычисляем <code>32 / 256</code> и кладём <code>0.125</code> в стек</td>
+            <td><code>[3, 0.125]</code></td>
+        </tr>
+
+        <tr>
+            <td rowspan="3">13</td>
+            <td rowspan="3"><code>"+"</code></td>
+            <td>достаём из стека <code>0.125</code></td>
+            <td><code>[3]</code></td>
+        </tr>
+        <tr>
+            <td>достаём из стека <code>3</code></td>
+            <td><code>[]</code></td>
+        </tr>
+        <tr>
+            <td>вычисляем <code>3 + 0.125</code> и кладём <code>3.125</code> в стек</td>
+            <td><code>[3.125]</code></td>
+        </tr>
+    </table>
+</div>
+
+<p>Итоговый ответ: <code>3.125</code>.</p>
+
+<p>Такой подход легко реализуется программно, если всё выражение уже представлено в виде массива токенов в RPN. Далее мы создадим калькулятор, который будет выполнять именно эти шаги и поддерживать:</p>
+
+<ul>
+    <li>любые унарные и бинарные операторы;</li>
+    <li>функции (<code>sin</code>, <code>max</code>, и др.);</li>
+    <li>константы (<code>pi</code>, <code>e</code>);</li>
+    <li>обработку возможных ошибок.</li>
+</ul>
+
+<h2>Реализация калькулятора</h2>
+
+<p>Создадим файл <code>expression_evaluator.js</code> с классом <code>ExpressionEvaluator</code>. Для удобства в конструкторе будем принимать следующие параметры:</p>
+
+<ul>
+    <li><code>functions</code> – словарь с поддерживаемыми функциями, в котором ключами будут имена функций, а значениями – их параметры: количество аргументов <code>args</code> и функция вычисления <code>evaluate</code>);</li>
+    <li><code>constants</code> – словарь с поддерживаемыми константами;</li>
+    <li><code>operators</code> – словарь с поддерживаемыми операторами, в котором ключами будут сами операторы, а значениями их параметры: количество аргументов <code>args</code> и функция для вычисления <code>evaluate</code>.</li>
+</ul>
+
+
+<div class="code">
+    <div class="code-title">Заготовка калькулятора</div>
+<pre data-lang="js">
+class ExpressionEvaluator {
+    constructor({functions, constants, operators}) {
+        this.functions = functions
+        this.constants = constants
+        this.operators = operators
+    }
+}
+</pre>
+</div>
+
+<p>Все вычисления будем проводить в методе <code>evaluate</code>, принимающим два аргумента:</p>
+
+<ul>
+    <li><code>rpn</code> – выражение в постфиксной форме в виде массива токенов (которые выдаёт токенизатор);</li>
+    <li><code>variables</code> – словарь, в котором ключами будут имена переменных, а значениями – значения этих переменных.</li>
+</ul>
+
+<p>Реализуем в этом методе описанный выше алгоритм:</p>
+
+<div class="code">
+    <div class="code-title">Вычисление значения выражения</div>
+<pre data-lang="js">
+evaluate({rpn, variables = {}}) {
+    const stack = []
+
+    for (const token of rpn) {
+        if (token.type === "number") {
+            stack.push(parseFloat(token.value))
+        }
+        else if (token.type === "constant") {
+            stack.push(this.constants[token.value])
+        }
+        else if (token.type === "variable") {
+            stack.push(variables[token.value])
+        }
+        else if (token.type === "operator") {
+            const operator = this.operators[token.value]
+            const args = stack.splice(-operator.args)
+            stack.push(operator.evaluate(...args))
+        }
+        else if (token.type === "function") {
+            const func = this.functions[token.value]
+            const args = stack.splice(-func.args)
+            stack.push(func.evaluate(...args))
+        }
+    }
+
+    return stack[0]
+}
+</pre>
+</div>
+
+<p>Уже сейчас наш калькулятор способен вычислять корректные выражения. Убедимся в этом сами:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем калькулятор</div>
+<pre data-lang="js">
+// поддерживаемые функции
+const functions = {
+    "sin": {args: 1, evaluate: Math.sin},
+    "max": {args: 2, evaluate: Math.max}
+}
+
+// поддерживаемые константы
+const constants = {
+    "pi": Math.PI,
+    "e": Math.E
+}
+
+// поддерживаемые операции
+const operators = {
+    "+": {args: 2, evaluate: (arg1, arg2) => arg1 + arg2},
+    "-": {args: 2, evaluate: (arg1, arg2) => arg1 - arg2},
+    "*": {args: 2, evaluate: (arg1, arg2) => arg1 * arg2},
+    "/": {args: 2, evaluate: (arg1, arg2) => arg1 / arg2},
+    "^": {args: 2, evaluate: (arg1, arg2) => arg1 ** arg2},
+    "~": {args: 1, evaluate: arg => -arg}, // унарный минус
+}
+
+// используем токенизатор из прошлой статьи
+const tokenizer = new ExpressionTokenizer({
+    functions: Object.keys(functions),
+    constants: Object.keys(constants)
+})
+
+const tokens = tokenizer.tokenize("3 4 8 * 5 3 - 2 3 ^ ^ / +")
+
+// создаём наш калькулятор
+const evaluator = new ExpressionEvaluator({
+    constants: constants,
+    functions: functions,
+    operators: operators
+})
+
+const result = evaluator.evaluate({rpn: tokens}) // 3.125
+</pre>
+</div>
+
+<h2>Обработка ошибок</h2>
+
+<p>Но что произойдёт, если мы подадим калькулятору выражение <code>1 +</code> или <code>5 x ^</code>? Строго говоря, калькулятор всё равно получит ответ (который почти наверняка будет или <code>NaN</code> или <code>undefined</code>, но это совсем не то, чего нам хотелось бы от калькулятора. Давайте рассмотрим, какие могут быть некорректные случаи:</p>
+
+<ul>
+    <li>обрабатываемого <b class="highlight">оператора</b>, <b class="highlight">функции</b> или <b class="highlight">константы</b> может не оказаться в списках допустимых;</li>
+    <li>при обработке <b class="highlight">операторов</b> и <b class="highlight">функций</b> в стеке может не оказаться нужного количества аргументов;</li>
+    <li>при обработке <b class="highlight">переменной</b> может не оказаться установленного значения;</li>
+    <li>в качестве токена может прийти что-то ещё помимо обрабатываемых алгоритмом сейчас;</li>
+    <li>в конце работы стек может оказаться пуст или в стеке может находиться более одного значения.</li>
+</ul>
+
+<p>Обработаем эти ситуации, дополнительно вынеся обработку операторов, функций и переменных в соответствующие функции:</p>
+
+
+<div class="code">
+    <div class="code-title">Вычисление значения с проверкой корректности</div>
+<pre data-lang="js">
+evaluate({rpn, variables = {}}) {
+    const stack = []
+
+    for (const token of rpn) {
+        if (token.type === "number") {
+            stack.push(parseFloat(token.value))
+        }
+        else if (token.type === "constant") {
+            this.evaluateConstant(token, stack)
+        }
+        else if (token.type === "variable") {
+            this.evaluateVariable(token, stack, variables)
+        }
+        else if (token.type === "operator") {
+            this.evaluateOperator(token, stack)
+        }
+        else if (token.type === "function") {
+            this.evaluateFunction(token, stack)
+        }
+        else
+            throw new Error(`got invalid token "${token.value}" (${token.start}:${token.end})`)
+    }
+
+    if (stack.length != 1)
+        throw new Error("expression is invalid")
+
+    return stack[0]
+}
+
+// обработка константы
+evaluateConstant(token, stack) {
+    if (!(token.value in this.constants))
+        throw new Error(`got unknown constant "${token.value}" (${token.start}:${token.end})`)
+
+    stack.push(this.constants[token.value])
+}
+
+// обработка переменной
+evaluateVariable(token, stack, variables) {
+    if (!(token.value in variables))
+        throw new Error(`variable "${token.value}" value is not set`)
+
+    stack.push(variables[token.value])
+}
+
+// обработка операции
+evaluateOperator(token, stack) {
+    const operator = this.operators[token.value]
+
+    if (!operator)
+        throw new Error(`got unknown operator "${token.value}" (${token.start}:${token.end})`)
+
+    if (stack.length < operator.args)
+        throw new Error(`not enough arguments to evaluate operator "${token.value}" (${token.start}:${token.end})`)
+
+    const args = stack.splice(-operator.args)
+    stack.push(operator.evaluate(...args))
+}
+
+// обработка функции
+evaluateFunction(token, stack) {
+    const func = this.functions[token.value]
+
+    if (!func)
+        throw new Error(`got unknown function "${token.value}" (${token.start}:${token.end})`)
+
+    if (stack.length < func.args)
+        throw new Error(`not enough arguments to evaluate function "${token.value}" (${token.start}:${token.end})`)
+
+    const args = stack.splice(-func.args)
+    stack.push(func.evaluate(...args))
+}
+</pre>
+</div>
+
+<p>Теперь при попытке посчитать некорректное выражение калькулятор будет бросать соответствующее исключение.</p>
+
+<h2>А что это за операция <code>~</code>?</h2>
+
+<p>Внимательные читатели могли заметить, что среди бинарных операций появилась какая-то унарная с токеном <code>~</code>. Такой токен, получить от токенизатора просто невозможно, но так и должно быть. В обратной польской нотации нам нужно как-то отличать унарный минус от операции вычитания. Кроме как завести под инверсию специальный токен мы больше ничего и не можем. Однако это нам понадобится в будущем, когда мы будет реализовывать парсер, переводящий выражение из инфиксной формы в постфиксную. Именно он будет определять, чем является операция <code>-</code> и в случае чего подменять выходной токен для RPN.</p>
+
+<p>При этом нам ничего не мешает самостоятельно сформировать токены выражения (в конце концов токенизатор мы сейчас использовали просто для удобства) и вычислить его:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем унарный минус</div>
+<pre data-lang="js">
+// токены, представляющие выражение 5 * -7
+const rpn = [
+    {"type": "number", "value": "5"},
+    {"type": "number", "value": "7"},
+    {"type": "operator", "value": "~"},
+    {"type": "operator", "value": "*"}
+]
+
+const evaluator = new ExpressionEvaluator({
+    constants: constants,
+    functions: functions,
+    operators: operators
+})
+
+const result = evaluator.evaluate({rpn: rpn}) // -35
+</pre>
+</div>
+
+<h2>Заключение</h2>
+
+<p>В этой статье всего в каких-то 88 строках мы реализовали полноценный калькулятор выражений в обратной польской записи – надёжный и расширяемый инструмент, который станет фундаментом для следующих частей цикла. Благодаря стековой природе RPN мы смогли обойтись без учёта приоритетов операций и скобок, а значит – упростили вычисление до последовательного применения операций и функций.</p>
+
+<p>В следующих статьях мы научимся преобразовывать привычные математические выражения в польскую запись. Начнём с классического алгоритма сортировочной станции, а затем постепенно перейдём к более гибким и мощным парсерам.</p>
+
+<div class="code">
+    <div class="code-title">Итоговый файл <a class="link" href="/media/articles/{{article.link}}/expression_evaluator.js" download>expression_evaluator.js</a></div>
+<pre data-lang="js">
+class ExpressionEvaluator {
+    constructor({functions, constants, operators}) {
+        this.functions = functions
+        this.constants = constants
+        this.operators = operators
+    }
+
+    evaluate({rpn, variables = {}}) {
+        const stack = []
+
+        for (const token of rpn) {
+            if (token.type === "number") {
+                stack.push(parseFloat(token.value))
+            }
+            else if (token.type === "constant") {
+                this.evaluateConstant(token, stack)
+            }
+            else if (token.type === "variable") {
+                this.evaluateVariable(token, stack, variables)
+            }
+            else if (token.type === "operator") {
+                this.evaluateOperator(token, stack)
+            }
+            else if (token.type === "function") {
+                this.evaluateFunction(token, stack)
+            }
+            else
+                throw new Error(`got invalid token "${token.value}" (${token.start}:${token.end})`)
+        }
+
+        if (stack.length != 1)
+            throw new Error("expression is invalid")
+
+        return stack[0]
+    }
+
+    evaluateConstant(token, stack) {
+        if (!(token.value in this.constants))
+            throw new Error(`got unknown constant "${token.value}" (${token.start}:${token.end})`)
+
+        stack.push(this.constants[token.value])
+    }
+
+    evaluateVariable(token, stack, variables) {
+        if (!(token.value in variables))
+            throw new Error(`variable "${token.value}" value is not set`)
+
+        stack.push(variables[token.value])
+    }
+
+    evaluateOperator(token, stack) {
+        const operator = this.operators[token.value]
+
+        if (!operator)
+            throw new Error(`got unknown operator "${token.value}" (${token.start}:${token.end})`)
+
+        if (stack.length < operator.args)
+            throw new Error(`not enough arguments to evaluate operator "${token.value}" (${token.start}:${token.end})`)
+
+        const args = stack.splice(-operator.args)
+        stack.push(operator.evaluate(...args))
+    }
+
+    evaluateFunction(token, stack) {
+        const func = this.functions[token.value]
+
+        if (!func)
+            throw new Error(`got unknown function "${token.value}" (${token.start}:${token.end})`)
+
+        if (stack.length < func.args)
+            throw new Error(`not enough arguments to evaluate function "${token.value}" (${token.start}:${token.end})`)
+
+        const args = stack.splice(-func.args)
+        stack.push(func.evaluate(...args))
+    }
+}
+</pre>
+</div>
+
+<div class="two-links">
+    <p><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">Часть 1. Токенизация</a></p>
+    <p><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-three-shunting-yard-parser">Часть 3. Алгоритм сортировочной станции</a></p>
+</div>

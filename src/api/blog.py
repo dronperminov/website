@@ -46,6 +46,7 @@ async def get_post(post_id: int, user: Optional[User] = Depends(get_user)) -> HT
         page="post",
         user=user,
         post_title=post_title,
+        description=post_title,
         post=jsonable_encoder(post),
         breadcrumbs=[("/", "Главная"), ("/blog", "Блог"), (f"/post/{post_id}", post_title)]
     )

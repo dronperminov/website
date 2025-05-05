@@ -1,0 +1,935 @@
+<p class="note">Цикл статей о создании собственного парсера выражений: от токенизации до полноценного синтаксического разбора.</p>
+
+<h2>Оглавление цикла</h2>
+
+<ul>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">Часть 1. Токенизация</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">Часть 2. Вычисление выражения в обратной польской записи</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-three-shunting-yard-parser">Часть 3. Алгоритм сортировочной станции</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">Часть 4. Парсер рекурсивного спуска</a></li>
+    <li>Часть 5. Парсер Пратта (вы находитесь здесь)</li>
+</ul>
+
+<p>В <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">предыдущей части</a> мы реализовали парсер на основе <b class="highlight">рекурсивного спуска</b>, шаг за шагом строя грамматику и соответствующие методы. Такой подход является выразительным и гибким, но всё же требует явного описания правил для каждого уровня приоритета операций, что быстро приводит к множеству почти одинаковых функций.</p>
+
+<p>В этой статье мы познакомимся с <b class="highlight">парсером Пратта</b> – элегантной техникой синтаксического анализа, которая позволяет компактно и эффективно разбирать выражения с различными приоритетами и ассоциативностью операторов. В отличие от рекурсивного спуска, парсер Пратта не требует предварительно заданной иерархии в виде отдельных методов: вся логика сосредоточена в обработчиках токенов, которые знают, как себя вести в зависимости от контекста.</p>
+
+<h2>Что такое парсер Пратта?</h2>
+
+<p>Парсер Пратта – это разновидность <a class="link" href="https://en.wikipedia.org/wiki/Operator-precedence_parser">нисходящего парсера</a>, который сочетает в себе идеи рекурсивного спуска и учёт приоритетов операторов. Его можно рассматривать как гибрид между <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">рекурсивным спуском</a> и <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-three-shunting-yard-parser">алгоритмом сортировочной станции</a>, но куда более лаконичный и выразительный.</p>
+
+<p>Метод был предложен учёным Воном Праттом в 1973 году в статье <b class="highlight">«Top Down Operator Precedence»</b>. С тех пор он стал одним из любимых подходов разработчиков интерпретаторов и компиляторов, когда дело доходит до разбора математических выражений. Причина проста: он гибкий, простой и удивительно мощный.</p>
+
+<h2>Зачем использовать парсер Пратта?</h2>
+<p>Парсеры Пратта значительно упрощают разбор математических выражений по сравнению с классическими парсерами на основе рекурсивного спуска – и зачастую работают даже быстрее. Многие разработчики выбирают именно этот подход, когда сталкиваются с задачей парсинга, поскольку он предоставляет высокую гибкость: легко добавлять новые операторы и функции, удобно управлять приоритетами и ассоциативностью, а обработка ошибок становится интуитивной.</p>
+
+<p>В <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">предыдущей части</a> нашей серии, когда мы реализовывали парсер на основе рекурсивного спуска, нам пришлось вручную обрабатывать унарные выражения, возведение в степень, расставлять приоритеты и учитывать ассоциативность – всё это делало код громоздким и не всегда удобным для расширения. В парсере Пратта всё иначе: достаточно задать приоритет оператору – и остальное алгоритм берёт на себя. Это действительно элегантное и мощное решение, которое позволяет с лёгкостью описывать даже сложные выражения. Именно такой парсер мы и реализуем в этой статье.</p>
+
+<h2>Парсер Пратта для чисел</h2>
+
+<p>Как и в предыдущих частях, начнём с построения грамматики для разбора выражений. В качестве отправной точки снова рассмотрим самый простой случай – грамматику, которая обрабатывает выражения, состоящие лишь из одного числа:</p>
+
+<div class="code">
+    <div class="code-title">Грамматика с поддержкой только чисел</div>
+<pre class="code-no-lines" data-lang="math">
+Expression
+  = Prefix
+
+Prefix
+  = NUMBER
+</pre>
+</div>
+
+<p>Обратите внимание, мы используем <code>Prefix</code> вместо <code>Primary</code>, которое мы использовали в <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">прошлой статье</a>. Скоро увидим почему.</p>
+
+<p>Давайте создадим файл <code>pratt_parser.js</code> с классом <code>PrattParser</code>:</p>
+
+<div class="code">
+    <div class="code-title">Парсер Пратта для чисел</div>
+<pre data-lang="js">
+class PrattParser {
+    parse(tokens) {
+        this.tokens = tokens
+        this.index = 0
+        this.token = this.tokens[0]
+        this.rpn = []
+
+        this.parseExpression()
+
+        if (this.index < this.tokens.length)
+            throw new Error(`extra tokens after end of expression (${this.token.start})`)
+
+        return this.rpn
+    }
+
+    consume(type) {
+        const token = this.token
+
+        if (token === null)
+            throw new Error(`unexpected end of input, expected ${type}`)
+
+        if (token.type !== type)
+            throw new Error(`unexpected token: "${token.value}", expected ${type} (${token.start}:${token.end})`)
+
+        this.token = ++this.index < this.tokens.length ? this.tokens[this.index] : null
+        return token
+    }
+
+    /*
+     * Expression
+     *    = Prefix
+     */
+    parseExpression() {
+        this.parsePrefix()
+    }
+
+    /*
+     * Prefix
+     *    = NUMBER
+     */
+    parsePrefix() {
+        this.rpn.push(this.consume("number"))
+    }
+}
+</pre>
+</div>
+
+<p>Пока что наш парсер выглядит так же, как рекурсивный спуск. Однако сейчас мы добавим поддержку сложения, вычитания, умножения и деления, и вы сразу увидите, в чём настоящая сила и элегантность парсера Пратта.</p>
+
+<h2><code>Prefix</code> против <code>Infix</code> и <code>nud</code> против <code>led</code></h2>
+<p>Мы намеренно используем термин <code>Prefix</code>, а не <code>Primary</code>, потому что в парсерах Пратта поведение разбора зависит от того, встречается ли выражение в префиксной или инфиксной позиции.</p>
+
+<p>В оригинальной работе Воана Пратта использовались термины <code>nud</code> и <code>led</code>, которые мы здесь заменим на более понятные <code>Prefix</code> и <code>Infix</code>.</p>
+
+<ul>
+    <li><code>nud</code> расшифровывается как <code>null denotation</code> ("нулевое обозначение") и используется для токенов, которые могут быть распознаны без контекста слева. Примеры таких выражений: числа, скобки, унарные операторы (например, <code>-x</code>) и т.д. В нашем случае такие конструкции будут обрабатываться через метод <code>parsePrefix</code>.</li>
+    <li><code>led</code>, или <code>left denotation</code> ("левое обозначение"), применяется к выражениям, которые зависят от левого контекста. Это, как правило, бинарные операторы (<code>1 + 2</code>, <code>x * y</code>). Их мы будем обрабатывать через метод <code>parseInfix</code>.</li>
+</ul>
+
+<p>Почему это важно? Потому что одни и те же символы могут выполнять разные роли в зависимости от контекста. Например, как мы уже знаем, символ <code>-</code> может быть как унарным оператором (<code>-2</code>), так и бинарным (<code>3 - 1</code>). Когда <code>-</code> стоит в начале выражения, перед ним нет других токенов – это префиксная форма, и она будет обработана через <code>parsePrefix</code>. В случае <code>3 - 1</code> <code>-</code> появляется между токенами – это инфиксная форма, и она обрабатывается через <code>parseInfix</code>.</p>
+
+<p>Разделение выражений на префиксные и инфиксные позволяет сохранить как грамматику, так и реализацию синтаксического анализатора простыми, читаемыми и расширяемыми.</p>
+
+<h2>Добавляем сложение, вычитание и умножение с делением</h2>
+
+<p>Давайте обновим нашу грамматику, добавив поддержку операций сложения, вычитания, умножения и деления с использованием нового правила <code>Infix</code>:</p>
+
+<div class="code">
+    <div class="code-title">Грамматика с поддержкой сложения, вычитания, умножения и деления</div>
+<pre class="code-no-lines" data-lang="math">
+Expression
+  = Prefix (Infix)*
+
+Prefix
+  = NUMBER
+
+Infix
+  = ("+" | "-" | "*" | "/") Expression
+</pre>
+</div>
+
+<p>Грамматика, представленная выше, определяет, что выражение <code>Expression</code> начинается с <code>Prefix</code>, за которым может следовать ноль или более <code>Infix</code> выражений. Каждое <code>Infix</code> выражение состоит из нуля или более операторов, за которыми идёт другое выражение.</p>
+
+<p>Давайте рассмотрим несколько примеров того, как может быть сформировано математическое выражение. Начнем с числа <code>42</code>:</p>
+
+<div class="code">
+    <div class="code-title">Раскрываем грамматику для числа <code>42</code></div>
+<pre class="code-no-lines" data-lang="math">
+Expression -> Prefix (Infix)*
+    -> Prefix
+    -> NUMBER
+    -> 42
+</pre>
+</div>
+
+<p>Теперь рассмотрим математическое выражение: <code>1 + 2</code>:</p>
+
+<div class="code">
+    <div class="code-title">Раскрываем грамматику для выражения <code>1 + 2</code></div>
+<pre class="code-no-lines" data-lang="math">
+Expression -> Prefix (Infix)*
+    -> Prefix Infix
+    -> Prefix ("+" Expression)
+    -> Prefix ("+" Prefix)
+    -> Prefix + Prefix
+    -> NUMBER + NUMBER
+    -> 1 + 2
+</pre>
+</div>
+
+<p>Теперь более сложное выражение: <code>1 + 2 * 3</code>:</p>
+
+<div class="code">
+    <div class="code-title">Раскрываем грамматику для выражения <code>1 + 2 * 3</code></div>
+<pre class="code-no-lines" data-lang="math">
+Expression -> Prefix (Infix)*
+    -> Prefix Infix Infix
+    -> Prefix ("+" Expression) ("*" Expression)
+    -> Prefix ("+" Prefix) ("*" Prefix)
+    -> Prefix + Prefix * Prefix
+    -> NUMBER + NUMBER * NUMBER
+    -> 1 + 2 * 3
+</pre>
+</div>
+
+<p>Давайте реализуем это в нашем парсере:</p>
+
+<div class="code">
+    <div class="code-title">Парсер Пратта, поддерживающий сложение, вычитание, умножение и деление</div>
+<pre data-lang="js">
+class PrattParser {
+    constructor() {
+        this.operators = {
+            "+": 1,
+            "-": 1,
+            "*": 2,
+            "/": 2
+        }
+    }
+
+    // получение приоритета токена
+    getPrecedence(token) {
+        if (token && token.type === "operator")
+            return this.operators[token.value]
+
+        return 0
+    }
+
+    /*
+     * Expression
+     *   = Prefix (Infix)*
+     */
+    parseExpression(precedence = 0) {
+        this.parsePrefix()
+
+        while (precedence < this.getPrecedence(this.token))
+            this.parseInfix()
+    }
+
+    /*
+     * Infix
+     *   = ("+" | "-" | "*" | "/") (Expression)*
+     */
+    parseInfix() {
+        const token = this.consume("operator")
+        this.parseExpression(this.operators[token.value]) // парсим выражение с обновлённым приоритетом
+        this.rpn.push(token)
+    }
+
+    /*
+     * Prefix
+     *   = Number
+     */
+    parsePrefix() {
+        this.rpn.push(this.consume("number"))
+    }
+}
+</pre>
+</div>
+
+<p>Разве может этот короткий код работать? Давайте проверим!</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер</div>
+<pre data-lang="js">
+const tokenizer = new ExpressionTokenizer({
+    functions: ["sin", "cos", "tan", "max"],
+    constants: ["pi", "e"]
+})
+
+const parser = new PrattParser()
+
+parser.parse(tokenizer.tokenize("42")) // 42
+parser.parse(tokenizer.tokenize("1 + 2")) // 1 2 +
+parser.parse(tokenizer.tokenize("1 + 2 * 3")) // 1 2 3 * +
+parser.parse(tokenizer.tokenize("1 + 2 * 3 - 5 + 8 * 3 / 2.5")) // 1 2 3 * + 5 - 8 3 * 2.5 / +
+</pre>
+</div>
+
+<p>И правда работает. Но как? Давайте рассмотрим, что делает парсер при обработке выражения <code>1 + 2 * 3</code>. На вход методу <code>parse</code> приходят токены следующего вида:</p>
+
+<div class="code">
+    <div class="code-title">Входные токены выражения <code>1 + 2 * 3</code></div>
+<pre data-lang="js">
+[
+    {"type": "number", "value": "1", "start": 0, "end": 1},
+    {"type": "operator", "value": "+"," start": 2, "end": 3},
+    {"type": "number", "value": "2", "start": 4, "end": 5},
+    {"type": "operator", "value": "*"," start": 6, "end": 7},
+    {"type": "number", "value": "3", "start": 8, "end": 9}
+]
+</pre>
+</div>
+
+<p>Метод <code>parse</code> внутри себя вызывает <code>parseExpression()</code>, что запускает рекурсивный спуск по методам <code>parsePrefix</code> и <code>parseInfix</code>.</p>
+
+<p><code>parsePrefix</code> обрабатывает токен <code>1</code> и переходит к следующему коду внутри метода <code>parseExpression</code>:</p>
+
+<div class="code">
+    <div class="code-title">Главный цикл <code>parseExpression</code></div>
+<pre data-lang="js">
+while (precedence < this.getPrecedence(this.token))
+    this.parseInfix()
+</pre>
+</div>
+
+<p>Именно здесь начинается магия парсера Пратта. Изначально текущий приоритет (<code>precedence</code>) установлен в ноль. Далее мы сравниваем его с приоритетом следующего токена <code>+</code>. Для получения численного значения приоритета используется вспомогательный метод <code>getPrecedence</code>, использующий предварительно добавленный словарь приоритетов в конструкторе класса.</p>
+
+<div class="code">
+    <div class="code-title">Приоритеты операций</div>
+<pre data-lang="js">
+this.operators = {
+    "+": 1,
+    "-": 1,
+    "*": 2,
+    "/": 2
+}
+</pre>
+</div>
+
+<p>Мы входим в цикл <code>while</code>, потому что текущий приоритет (<code>0</code>) меньше приоритета следующего токена (<code>+</code>), который равен <code>1</code> (это значение возвращается методом <code>getPrecedence</code>). Далее вызывается метод <code>parseInfix</code>, который выполняет операцию сложения и рекурсивно вызывает <code>parseExpression</code> – но уже с новым приоритетом – <code>1</code>.</p>
+
+<p>Цикл <code>while</code> запускается снова для умножения, ведь приоритет <code>*</code> равен <code>2</code>, а <code>1 < 2</code>. В какой-то момент мы доходим до конца выражения, и текущий токен становится равен <code>null</code>.</p>
+
+<p>Когда текущий токен становится <code>null</code>, метод <code>getPrecedence</code> возвращает <code>0</code>, что завершает цикл <code>while</code> внутри метода <code>parseExpression</code>. Именно поэтому мы используем <code>getPrecedence</code>, а не обращаемся напрямую к словарю операторов.</p>
+
+<p>Возможно, всё это выглядит сложнее, чем обычный рекурсивный спуск, но не торопитесь с выводами – дальше вы увидите, насколько мощным и выразительным оказывается этот подход!</p>
+
+<h2>Добавляем возведение в степень</h2>
+
+<p>Теперь добавим в нашу грамматику оператор возведения в степень. Обратите внимание, насколько мало изменений требуется внести по сравнению с обычным рекусривным спуском – структура грамматики остаётся практически прежней. Парсеры Пратта берут всю сложную работу на себя – и делают это прекрасно!</p>
+
+<div class="code">
+    <div class="code-title">Грамматика с поддержкой сложения, вычитания, умножения и деления</div>
+<pre class="code-no-lines" data-lang="math">
+Expression
+  = Prefix (Infix)*
+
+Prefix
+  = NUMBER
+
+Infix
+  = ("+" | "-" | "*" | "/" | "^") Expression
+</pre>
+</div>
+
+<p>В конструкторе парсера добавим оператор <code>^</code> в <code>operators</code>. Возведение в степень должно иметь наивысший приоритет среди всех операций:</p>
+
+<div class="code">
+    <div class="code-title">Обновлённые операции</div>
+<pre data-lang="js">
+this.operators = {
+    "+": 1,
+    "-": 1,
+    "*": 2,
+    "/": 2,
+    "^": 3
+}
+</pre>
+</div>
+
+<p>А вот и самое интересное! Возведение в степень – это оператор, который имеет правую ассоциативность вместо левой. Это означает, что выражение <code>2 ^ 2 ^ 3</code> должно возвращать значение <code>256</code>, а не <code>64</code>.</p>
+
+<p>Для корректной обработки правоассоциативных операций достаточно просто вычесть единицу из приоритета, который передаётся в метод <code>parseExpression</code> внутри <code>parseInfix</code>. Да, всё действительно так просто! Никакой громоздкой перестройки грамматики, никаких ухищрений, чтобы заставить всё работать:</p>
+
+<div class="code">
+    <div class="code-title">Изменённый <code>parseInfix</code></div>
+<pre data-lang="js">
+/*
+ * Infix
+ *   = ("+" | "-" | "*" | "/" | "^") (Expression)*
+ */
+parseInfix() {
+    const token = this.consume("operator")
+    this.parseExpression(this.operators[token.value] - (token.value === "^" ? 1 : 0))
+    this.rpn.push(token)
+}
+</pre>
+</div>
+
+<p>Немного отойдя от шока, давайте проверим эту версию парсера на примерах:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер, поддерживающий взведение в степень</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("1 + 2*3^4")) // 1 2 3 4 ^ * +
+parser.parse(tokenizer.tokenize("2^2")) // 2 2 ^
+parser.parse(tokenizer.tokenize("2^2^3")) // 2 2 3 ^ ^
+</pre>
+</div>
+
+<h2>Обработка скобок</h2>
+
+<p>Отлично, мы уже разобрались со всеми инфиксными операциями – теперь осталось добавить поддержку префиксных. Начнём с обработки скобок. Для этого просто расширим нашу грамматику, добавив правило <code>ParenthesizedExpression</code> в блок <code>Prefix</code>, ровно так же, как и в <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">прошлой части</a>:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем круглые скобки</div>
+<pre class="code-no-lines" data-lang="math">
+Expression
+  = Prefix (Infix)*
+
+Prefix
+  = ParenthesizedExpression
+  / NUMBER
+
+Infix
+  = ("+" | "-" | "*" | "/" | "^") Expression
+
+ParenthesizedExpression
+  = "(" Expression ")"
+</pre>
+</div>
+
+<p>Добавим в наш метод <code>parsePrefix</code> проверку, что текущий токен является открывающей скобкой <code>(</code>. Если это так, то будем запускать метод <code>parseParenthesizedExpression</code>, который потребит скобки и распарсит выражение внутри них через вызов <code>parseExpression</code>:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем скобки</div>
+<pre data-lang="js">
+/*
+ * Prefix
+ *   = ParenthesizedExpression
+ *   / NUMBER
+ */
+parsePrefix() {
+    if (this.token.type === "left_parenthesis") {
+        this.parseParenthesizedExpression()
+        return
+    }
+
+    this.rpn.push(this.consume("number"))
+}
+
+/*
+ * ParenthesizedExpression
+ *   = "(" Expression ")"
+ */
+parseParenthesizedExpression() {
+    this.consume("left_parenthesis")
+    this.parseExpression()
+    this.consume("right_parenthesis")
+}
+</pre>
+</div>
+
+<p>Убедимся, что теперь парсер поддерживает выражения со скобками:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер, поддерживающий скобки</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("((1 + 2) + (3))")) // 1 2 + 3 +
+parser.parse(tokenizer.tokenize("7 - (4 - 2)")) // 7 4 2 - -
+parser.parse(tokenizer.tokenize("24 / (2 / 8)")) // 24 2 8 / /
+parser.parse(tokenizer.tokenize("1 + (2^3)^4")) // 1 2 3 ^ 4 ^ +
+</pre>
+</div>
+
+<h2>Обработка унарных операций</h2>
+
+<p>Давайте добавим в нашу грамматику правило <code>UnaryExpression</code> и дополним правило <code>Prefix</code>:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем унарный минус</div>
+<pre class="code-no-lines" data-lang="math">
+Expression
+  = Prefix (Infix)*
+
+Prefix
+  = ParenthesizedExpression
+  / UnaryExpression
+  / NUMBER
+
+Infix
+  = ("+" | "-" | "*" | "/" | "^") Expression
+
+ParenthesizedExpression
+  = "(" Expression ")"
+
+UnaryExpression
+  = "-" Expression
+</pre>
+</div>
+
+<p>Обратите внимание, что в нашем правиле грамматики для <code>UnaryExpression</code> теперь используется <code>"-" Expression</code>. В <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">прошлой статье</a> мы использовали <code>"-" Factor</code>. Поскольку метод <code>parseExpression</code> в нашем парсере Пратта уже автоматически учитывает приоритеты операторов, мы можем безопасно применять <code>"-" Expression</code> в грамматике.</p>
+
+<p>Как уже упоминалось ранее, унарный оператор использует тот же символ, <code>-</code>, что и операция вычитания. Однако технически унарная операция имеет более высокий приоритет, чем умножение и деление, но ниже, чем возведение в степень. Поэтому нам нужно обновить наш словарь <code>operators</code>, чтобы корректно обрабатывать унарный оператор <code>~</code>:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем унарные операции</div>
+<pre data-lang="js">
+constructor() {
+    this.operators = {
+        "+": 1,
+        "-": 1,
+        "*": 2,
+        "/": 2,
+        "~": 3, // добавили унарный минус
+        "^": 4 // обновили приоритет
+    }
+}
+
+/*
+ * Prefix
+ *   = ParenthesizedExpression
+ *   / UnaryExpression
+ *   / NUMBER
+ */
+parsePrefix() {
+    if (this.token.type === "left_parenthesis") {
+        this.parseParenthesizedExpression()
+        return
+    }
+
+    if (this.token.type === "operator" && this.token.value === "-") {
+        this.parseUnaryExpression()
+        return
+    }
+
+    this.rpn.push(this.consume("number"))
+}
+
+/*
+ * UnaryExpression
+ *   = "-" Expression
+ */
+parseUnaryExpression() {
+    const token = this.consume("operator")
+    token.value = "~" // заменяем на унарный минус
+    this.parseExpression(this.operators[token.value])
+    this.rpn.push(token)
+}
+</pre>
+</div>
+
+<p>Проверим же наш новый парсер в деле:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("-5")) // 5 ~
+parser.parse(tokenizer.tokenize("-(-(1 + 2) + -(-3))")) // 1 2 + ~ 3 ~ ~ + ~
+parser.parse(tokenizer.tokenize("-----127")) // 127 ~ ~ ~ ~ ~
+parser.parse(tokenizer.tokenize("-2^2")) // 2 2 ^ ~
+parser.parse(tokenizer.tokenize("-2^-2^-3")) // 2 2 3 ~ ^ ~ ^ ~
+</pre>
+</div>
+
+<p>Обратите внимание, унарная операция должна иметь более низкий приоритет, чем возведение в степень, и мы можем использовать несколько <code>-</code> символов унарных операций подряд.</p>
+
+<h2>Добавляем функции</h2>
+
+<p>Вновь расширим нашу грамматику, добавив в неё правило <code>FunctionExpression</code> и расширив при этом правило <code>Prefix</code>:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем функции</div>
+<pre class="code-no-lines" data-lang="math">
+Expression
+  = Prefix (Infix)*
+
+Prefix
+  = ParenthesizedExpression
+  / UnaryExpression
+  / FunctionExpression
+  / NUMBER
+
+Infix
+  = ("+" | "-" | "*" | "/" | "^") Expression
+
+ParenthesizedExpression
+  = "(" Expression ")"
+
+UnaryExpression
+  = "-" Expression
+
+FunctionExpression
+  = FUNCTION "(" Expression ("," Expression)* ")"
+</pre>
+</div>
+
+<p>Добавленное правило позволяет обрабатывать функции с произвольным числом аргументов. Но мы будем обрабатывать то количество аргументов, которое требуется функции. Поэтому нам потребуется передавать в наш парсер словарь с обрабатываемыми функциями, в котором хранится информация о требуемых аргументах.</p>
+
+<p>Обновим конструктор и реализуем метод <code>parseFunctionExpression</code>:</p>
+
+<div class="code">
+    <div class="code-title">Парсер с поддержкой функций</div>
+<pre data-lang="js">
+constructor(functions) {
+    this.functions = functions
+    this.operators = {
+        "+": 1,
+        "-": 1,
+        "*": 2,
+        "/": 2,
+        "~": 3,
+        "^": 4
+    }
+}
+
+/*
+ * Prefix
+ *   = ParenthesizedExpression
+ *   / UnaryExpression
+ *   / FunctionExpression
+ *   / NUMBER
+ */
+parsePrefix() {
+    if (this.token.type === "left_parenthesis") {
+        this.parseParenthesizedExpression()
+        return
+    }
+
+    if (this.token.type === "operator" && this.token.value === "-") {
+        this.parseUnaryExpression()
+        return
+    }
+
+    if (this.token.type === "function") {
+        this.parseFunctionExpression()
+        return
+    }
+
+    this.rpn.push(this.consume("number"))
+}
+
+/*
+ * FunctionExpression
+ *   = FUNCTION "(" Expression ("," Expression)* ")"
+ */
+parseFunctionExpression() {
+    const token = this.consume("function")
+    this.consume("left_parenthesis")
+    this.parseExpression()
+
+    for (let i = 1; i < this.functions[token.value].args; i++) {
+        this.consume("delimeter")
+        this.parseExpression()
+    }
+
+    this.consume("right_parenthesis")
+    this.rpn.push(token)
+}
+</pre>
+</div>
+
+<p>Мы вновь расширили правило <code>parsePrefix</code> ещё одним условием – является ли текущий токен <b class="highlight">функцией</b>. Если являестя, то запускаем парсинг функционального выражения.</p>
+
+<p>Проверим, что парсер работает ожидаемым образом:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("sin(1)")) // 1 sin
+parser.parse(tokenizer.tokenize("tan(max(sin(1), cos(-1)))")) // 1 sin 1 ~ cos max tan 
+parser.parse(tokenizer.tokenize("sin(1, 2, 3, 4)")) // Error: unexpected token: ",", expected right_parenthesis (5:6)
+</pre>
+</div>
+
+<h2>Добавляем константы и переменные</h2>
+
+<p>Наконец добавим поддержку констант и переменных в нашу грамматику:</p>
+
+<div class="code">
+    <div class="code-title">Добавляем функции</div>
+<pre class="code-no-lines" data-lang="math">
+Expression
+  = Prefix (Infix)*
+
+Prefix
+  = ParenthesizedExpression
+  / UnaryExpression
+  / FunctionExpression
+  / CONSTANT
+  / VARIABLE
+  / NUMBER
+
+Infix
+  = ("+" | "-" | "*" | "/" | "^") Expression
+
+ParenthesizedExpression
+  = "(" Expression ")"
+
+UnaryExpression
+  = "-" Expression
+
+FunctionExpression
+  = FUNCTION "(" Expression ("," Expression)* ")"
+</pre>
+</div>
+
+<p>Добавим дополнительную проверку в метод <code>parsePrefix</code> и наш парсер готов:</p>
+
+<div class="code">
+    <div class="code-title">Парсер с поддержкой констант и переменных</div>
+<pre data-lang="js">
+/*
+ * Prefix
+ *   = ParenthesizedExpression
+ *   / UnaryExpression
+ *   / FunctionExpression
+ *   / CONSTANT
+ *   / VARIABLE
+ *   / NUMBER
+ */
+parsePrefix() {
+    if (this.token.type === "left_parenthesis") {
+        this.parseParenthesizedExpression()
+        return
+    }
+
+    if (this.token.type === "operator" && this.token.value === "-") {
+        this.parseUnaryExpression()
+        return
+    }
+
+    if (this.token.type === "function") {
+        this.parseFunctionExpression()
+        return
+    }
+
+    if (this.token.type === "constant" || this.token.type === "variable") {
+        this.rpn.push(this.consume(this.token.type))
+        return
+    }
+
+    this.rpn.push(this.consume("number"))
+}
+</pre>
+</div>
+
+<p>Проверим, что наш парсер корректно работает после последнего обновления:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем парсер</div>
+<pre data-lang="js">
+parser.parse(tokenizer.tokenize("sin(pi*x)")) // pi x * sin
+parser.parse(tokenizer.tokenize("e^-pi")) // e pi ~ ^
+parser.parse(tokenizer.tokenize("e*sin(x)^2 + pi*cos(y)^2")) // e x sin 2 ^ * pi y cos 2 ^ * +
+</pre>
+</div>
+
+<h2>Обновляем парсер математических выражений</h2>
+
+<p>Давайте вновь поменяем парсер, используемый в файле <code>expression_parser.js</code>:</p>
+
+<div class="code">
+    <div class="code-title">Заменяем парсер в <code>ExpressionParser</code></div>
+<pre data-lang="js">
+ // было так
+const parser = new RecursiveDescentParser(functions)
+
+// стало так
+const parser = new PrattParser(functions)
+</pre>
+</div>
+
+<p>Запустим вновь тесты из <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">прошлой статьи</a>, чтобы убедиться, что парсер работает точно так же:</p>
+
+<div class="code">
+    <div class="code-title">Тестируем парсер рекурсивного спуска</div>
+<pre data-lang="js">
+function TestParser(expression, expected, variables = {}, eps = 1e-15) {
+    try {
+        const parser = new ExpressionParser(expression)
+
+        for (const [variable, value] of Object.entries(variables))
+            parser.setVariable(variable, value)
+
+        const result = parser.evaluate()
+
+        if (Math.abs(result - expected) < eps)
+            console.log(`%c${expression} = ${result}`, "color: green")
+        else
+            console.log(`%c${expression} = ${result}, but expected ${expected}`, "color: red")
+    }
+    catch (error) {
+        console.log(`%c"${expression}" is invalid: ${error.message}`, expected === null ? "color: green" : "color: red")
+    }
+}
+
+// проверяем корректные выражения
+TestParser("1", 1) // 1 = 1
+TestParser("1 + 2 * 3", 7) // 1 + 2 * 3 = 7
+TestParser("-(1 + 2) * 3 - 4", -13) // -(1 + 2) * 3 - 4 = -13
+TestParser("-2^2", -4) // -2^2 = -4
+TestParser("(-2)^2", 4) // (-2)^2 = 4
+TestParser("-2^-2", -0.25) // -2^-2 = -0.25
+TestParser("(-2)^-2", 0.25) // (-2)^-2 = 0.25
+TestParser("max(5 + 2^3, -7 * -9)", 63) // max(5 + 2^3, -7 * -9) = 63
+TestParser("cos(7 - 5)^2 + sin(4^0.5)^2", 1) // cos(7 - 5)^2 + sin(4^0.5)^2 = 1
+TestParser("sin(x) * (pi/-x - 5)^2", -9, {"x": -Math.PI / 2}) // sin(x) * (pi/-x - 5)^2 = -9
+
+// проверяем некорректные выражения
+TestParser("()", null) // "()" is invalid: unexpected token: ")", expected number (1:2)
+TestParser("max(1)", null) // "max(1)" is invalid: unexpected token: ")", expected delimeter (5:6)
+TestParser("sin(1, 5)", null) // "sin(1, 5)" is invalid: unexpected token: ",", expected right_parenthesis (5:6)
+TestParser("sin cos 2 max 7", null) // "sin cos 2 max 7" is invalid: unexpected token: "cos", expected left_parenthesis (4:7)
+</pre>
+</div>
+
+<h2>Заключение</h2>
+
+<p>Поздравляю – вы дошли до конца! Теперь вам под силу разбирать любые математические выражения.</p>
+
+<p>Парсеры Пратта заслуженно считаются элегантным и мощным инструментом. Надеюсь, вам стало ясно, почему: их реализация проще, чем у классического рекурсивного спуска, они легче в сопровождении и прекрасно справляются с приоритетами операций.</p>
+
+<p>Надеюсь, вам было интересно!</p>
+
+<h3>Куда же без исходников?</h3>
+
+<div class="code">
+    <div class="code-title">Итоговый файл <a class="link" href="/media/articles/{{article.link}}/pratt_parser.js" download>pratt_parser.js</a></div>
+<pre data-lang="js">
+class PrattParser {
+    constructor(functions) {
+        this.functions = functions
+        this.operators = {
+            "+": 1,
+            "-": 1,
+            "*": 2,
+            "/": 2,
+            "~": 3,
+            "^": 4
+        }
+    }
+
+    parse(tokens) {
+        this.tokens = tokens
+        this.index = 0
+        this.token = this.tokens[0]
+        this.rpn = []
+
+        this.parseExpression()
+
+        if (this.index < this.tokens.length)
+            throw new Error(`extra tokens after end of expression (${this.token.start})`)
+
+        return this.rpn
+    }
+
+    consume(type) {
+        const token = this.token
+
+        if (token === null)
+            throw new Error(`unexpected end of input, expected ${type}`)
+
+        if (token.type !== type)
+            throw new Error(`unexpected token: "${token.value}", expected ${type} (${token.start}:${token.end})`)
+
+        this.token = ++this.index < this.tokens.length ? this.tokens[this.index] : null
+        return token
+    }
+
+    getPrecedence(token) {
+        if (token && token.type === "operator")
+            return this.operators[token.value]
+
+        return 0
+    }
+
+    /*
+     * Expression
+     *   = Prefix (Infix)*
+     */
+    parseExpression(precedence = 0) {
+        this.parsePrefix()
+
+        while (precedence < this.getPrecedence(this.token))
+            this.parseInfix()
+    }
+
+    /*
+     * Infix
+     *   = ("+" | "-" | "*" | "/" | "^") (Expression)*
+     */
+    parseInfix() {
+        const token = this.consume("operator")
+        this.parseExpression(this.operators[token.value] - (token.value === "^" ? 1 : 0))
+        this.rpn.push(token)
+    }
+
+    /*
+     * Prefix
+     *   = ParenthesizedExpression
+     *   / UnaryExpression
+     *   / FunctionExpression
+     *   / CONSTANT
+     *   / VARIABLE
+     *   / NUMBER
+     */
+    parsePrefix() {
+        if (this.token.type === "left_parenthesis") {
+            this.parseParenthesizedExpression()
+            return
+        }
+
+        if (this.token.type === "operator" && this.token.value === "-") {
+            this.parseUnaryExpression()
+            return
+        }
+
+        if (this.token.type === "function") {
+            this.parseFunctionExpression()
+            return
+        }
+
+        if (this.token.type === "constant" || this.token.type === "variable") {
+            this.rpn.push(this.consume(this.token.type))
+            return
+        }
+
+        this.rpn.push(this.consume("number"))
+    }
+
+    /*
+     * ParenthesizedExpression
+     *   = "(" Expression ")"
+     */
+    parseParenthesizedExpression() {
+        this.consume("left_parenthesis")
+        this.parseExpression()
+        this.consume("right_parenthesis")
+    }
+
+    /*
+     * UnaryExpression
+     *   = "-" Expression
+     */
+    parseUnaryExpression() {
+        const token = this.consume("operator")
+        token.value = "~" // заменяем на унарный минус
+        this.parseExpression(this.operators[token.value])
+        this.rpn.push(token)
+    }
+
+    /*
+     * FunctionExpression
+     *   = FUNCTION "(" Expression ("," Expression)* ")"
+     */
+    parseFunctionExpression() {
+        const token = this.consume("function")
+        this.consume("left_parenthesis")
+        this.parseExpression()
+
+        for (let i = 1; i < this.functions[token.value].args; i++) {
+            this.consume("delimeter")
+            this.parseExpression()
+        }
+
+        this.consume("right_parenthesis")
+        this.rpn.push(token)
+    }
+}
+</pre>
+</div>
+
+<p>А так же</p>
+
+<ul>
+    <li><a class="link" href="/media/articles/{{article.link}}/expression_tokenizer.js" download>expression_tokenizer.js</a> – токенизатор из <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">первой части</a>;</li>
+    <li><a class="link" href="/media/articles/{{article.link}}/expression_evaluator.js" download>expression_evaluator.js</a> – калькулятор выражений, записаных в обратной польской записи из <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">второй части</a>;</li>
+    <li><a class="link" href="/media/articles/{{article.link}}/expression_parser.js" download>expression_parser.js</a> – парсер математических выражений, использующий парсер Пратта из этой части.</li>
+</ul>
+
+<div class="two-links">
+    <p><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">Часть 4. Парсер рекурсивного спуска</a></p>
+    <p></p>
+</div>

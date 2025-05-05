@@ -29,6 +29,13 @@
     --code-background-color: #fffbf6;
     --code-border-color: #f0f0f0;
     --code-title-color: var(--main-color);
+
+    --table-border-color: var(--main-color);
+    --table-background-color1: #fff9f0;
+    --table-background-color2: #fff6f6;
+
+    --table-header-color: #fff;
+    --table-header-background-color: #fe9497;
 }
 
 @font-face {
@@ -156,6 +163,7 @@ math {
     border-radius: 0 5px 5px 0;
     font-style: italic;
     font-size: 0.9em;
+    margin: 0.5em 0 1em;
 }
 
 .hidden {

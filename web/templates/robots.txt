@@ -4,4 +4,5 @@ Disallow: /logout
 Disallow: /search-articles
 Disallow: /search-posts
 Disallow: /validate
+Disallow: /media/
 Sitemap: https://dronperminov.ru/sitemap.xml

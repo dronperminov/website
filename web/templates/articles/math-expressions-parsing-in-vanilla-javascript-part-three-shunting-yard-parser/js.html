@@ -1,0 +1,7 @@
+<script src="/js/utils/code_highlight.js?v={{version}}"></script>
+<script>
+    let codeHighlight = new CodeHighlight()
+
+    for (let code of document.querySelectorAll(".code pre"))
+        codeHighlight.Highlight(code)
+</script>
