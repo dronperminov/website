@@ -76,22 +76,22 @@ class PrattParser {
      *   / NUMBER
      */
     parsePrefix() {
-        if (this.token.type === "left_parenthesis") {
+        if (this.token?.type === "left_parenthesis") {
             this.parseParenthesizedExpression()
             return
         }
 
-        if (this.token.type === "operator" && this.token.value === "-") {
+        if (this.token?.type === "operator" && this.token.value === "-") {
             this.parseUnaryExpression()
             return
         }
 
-        if (this.token.type === "function") {
+        if (this.token?.type === "function") {
             this.parseFunctionExpression()
             return
         }
 
-        if (this.token.type === "constant" || this.token.type === "variable") {
+        if (this.token?.type === "constant" || this.token?.type === "variable") {
             this.rpn.push(this.consume(this.token.type))
             return
         }

@@ -207,7 +207,7 @@ Primary
 parseExpression() {
     this.parsePrimary()
 
-    while (this.token && this.token.type == "operator" && (this.token.value === "+" || this.token.value === "-")) {
+    while (this.token?.type === "operator" && (this.token.value === "+" || this.token.value === "-")) {
         const operator = this.consume("operator")
         this.parsePrimary()
         this.rpn.push(operator)
@@ -258,7 +258,7 @@ Primary
 parseExpression() {
     this.parseTerm()
 
-    while (this.token && this.token.type == "operator" && (this.token.value === "+" || this.token.value === "-")) {
+    while (this.token?.type === "operator" && (this.token.value === "+" || this.token.value === "-")) {
         const operator = this.consume("operator")
         this.parseTerm()
         this.rpn.push(operator)
@@ -272,7 +272,7 @@ parseExpression() {
 parseTerm() {
     this.parsePrimary()
 
-    while (this.token && this.token.type == "operator" && (this.token.value === "*" || this.token.value === "/")) {
+    while (this.token?.type === "operator" && (this.token.value === "*" || this.token.value === "/")) {
         const operator = this.consume("operator")
         this.parsePrimary()
         this.rpn.push(operator)
@@ -326,7 +326,7 @@ Primary
 parseTerm() {
     this.parseFactor()
 
-    while (this.token && this.token.type == "operator" && (this.token.value === "*" || this.token.value === "/")) {
+    while (this.token?.type === "operator" && (this.token.value === "*" || this.token.value === "/")) {
         const operator = this.consume("operator")
         this.parseFactor()
         this.rpn.push(operator)
@@ -340,7 +340,7 @@ parseTerm() {
 parseFactor() {
     this.parsePrimary()
 
-    while (this.token && this.token.type == "operator" && this.token.value === "^") {
+    while (this.token?.type === "operator" && this.token.value === "^") {
         const operator = this.consume("operator")
         this.parseFactor()
         this.rpn.push(operator)
@@ -369,7 +369,7 @@ parser.parse(tokenizer.tokenize("2^2^3")) // 2 2 3 ^ ^
 parseBinaryExpresson(parseLeft, parseRight, values) {
     parseLeft()
 
-    while (this.token && this.token.type == "operator" && values.has(this.token.value)) {
+    while (this.token?.type === "operator" && values.has(this.token.value)) {
         const operator = this.consume("operator")
         parseRight()
         this.rpn.push(operator)
@@ -452,7 +452,7 @@ ParenthesizedExpression
  *    / NUMBER
  */
 parsePrimary() {
-    if (this.token.type === "left_parenthesis") {
+    if (this.token?.type === "left_parenthesis") {
         this.parseParenthesizedExpression()
         return
     }
@@ -527,12 +527,12 @@ UnaryExpression
  *    / NUMBER
  */
 parsePrimary() {
-    if (this.token.type === "left_parenthesis") {
+    if (this.token?.type === "left_parenthesis") {
         this.parseParenthesizedExpression()
         return
     }
 
-    if (this.token.type === "operator" && this.token.value === "-") {
+    if (this.token?.type === "operator" && this.token.value === "-") {
         this.parseUnaryExpression()
         return
     }
@@ -620,17 +620,17 @@ constructor(functions) {
  *    / NUMBER
  */
 parsePrimary() {
-    if (this.token.type === "left_parenthesis") {
+    if (this.token?.type === "left_parenthesis") {
         this.parseParenthesizedExpression()
         return
     }
 
-    if (this.token.type === "operator" && this.token.value === "-") {
+    if (this.token?.type === "operator" && this.token.value === "-") {
         this.parseUnaryExpression()
         return
     }
 
-    if (this.token.type === "function") {
+    if (this.token?.type === "function") {
         this.parseFunctionExpression()
         return
     }
@@ -724,22 +724,22 @@ FunctionExpression
  *    / NUMBER
  */
 parsePrimary() {
-    if (this.token.type === "left_parenthesis") {
+    if (this.token?.type === "left_parenthesis") {
         this.parseParenthesizedExpression()
         return
     }
 
-    if (this.token.type === "operator" && this.token.value === "-") {
+    if (this.token?.type === "operator" && this.token.value === "-") {
         this.parseUnaryExpression()
         return
     }
 
-    if (this.token.type === "function") {
+    if (this.token?.type === "function") {
         this.parseFunctionExpression()
         return
     }
 
-    if (this.token.type === "constant" || this.token.type === "variable") {
+    if (this.token?.type === "constant" || this.token?.type === "variable") {
         this.rpn.push(this.consume(this.token.type))
         return
     }
@@ -865,7 +865,7 @@ class RecursiveDescentParser {
     parseBinaryExpresson(parseLeft, parseRight, values) {
         parseLeft()
 
-        while (this.token && this.token.type == "operator" && values.has(this.token.value)) {
+        while (this.token?.type === "operator" && values.has(this.token.value)) {
             const operator = this.consume("operator")
             parseRight()
             this.rpn.push(operator)
@@ -906,22 +906,22 @@ class RecursiveDescentParser {
      *    / NUMBER
      */
     parsePrimary() {
-        if (this.token.type === "left_parenthesis") {
+        if (this.token?.type === "left_parenthesis") {
             this.parseParenthesizedExpression()
             return
         }
 
-        if (this.token.type === "operator" && this.token.value === "-") {
+        if (this.token?.type === "operator" && this.token.value === "-") {
             this.parseUnaryExpression()
             return
         }
 
-        if (this.token.type === "function") {
+        if (this.token?.type === "function") {
             this.parseFunctionExpression()
             return
         }
 
-        if (this.token.type === "constant" || this.token.type === "variable") {
+        if (this.token?.type === "constant" || this.token?.type === "variable") {
             this.rpn.push(this.consume(this.token.type))
             return
         }
