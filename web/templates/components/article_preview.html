@@ -1,0 +1,21 @@
+<article itemscope="" itemtype="http://schema.org/Article">
+    <meta itemprop="url" content="/articles/{{article.link}}">
+    <meta itemprop="inLanguage" content="ru-RU">
+
+    <div class="author" itemprop="author" itemscope="" itemtype="http://schema.org/Person">
+        <a href="/"><img src="/images/profiles/dronperminov.jpg" alt="dronperminov avatar"></a>
+        <a class="link" href="/" itemprop="url"><span itemprop="name">dronperminov</span></a>
+    </div>
+
+    <time class="datetime" itemprop="datePublished" content="{{article.datetime.isoformat()}}">{{article.format_datetime()}}</time>
+    <a class="title" href="/articles/{{article.link}}" itemprop="headline name">{{article.title}}</a>
+    <div class="tags">{% for tag in article.tags %}{% if loop.index > 1 %}<span>, </span>{% endif %}<span class="tag">{{tag}}</span>{% endfor %}</div>
+
+    <div class="preview" itemprop="image" itemscope="" itemtype="http://schema.org/ImageObject">
+        <a href="/articles/{{article.link}}">
+            <img src="{{article.preview.preview_url}}" itemprop="url contentUrl" alt="{{article.title}}">
+        </a>
+    </div>
+
+    <div class="intro">{{article.intro}}</div>
+</article>

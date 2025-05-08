@@ -3,4 +3,14 @@
     display: grid;
     grid-auto-flow: row;
     grid-gap: 1em;
+    margin: 0 auto;
+}
+
+.pagination {
+    padding: 1em;
+    text-align: center;
+}
+
+.pagination a {
+    margin: 0 1em;
 }

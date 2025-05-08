@@ -1,8 +1,8 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
 from src import articles_database
 from src.api import templates
@@ -15,13 +15,28 @@ router = APIRouter()
 
 
 @router.get("/articles")
-async def get_articles(user: Optional[User] = Depends(get_user)) -> HTMLResponse:
+async def get_articles(page: Optional[int] = Query(None), user: Optional[User] = Depends(get_user)) -> Response:
+    if page and page <= 1:
+        return RedirectResponse("/articles", status_code=301)
+
+    params = ArticlesSearch(page=page - 1 if page else 0, page_size=10)
+    total, articles = articles_database.search(params=params)
+    page_text = f" – страница {params.page + 1}" if params.page else ""
+
+    if params.page_size * params.page >= total:
+        return RedirectResponse("/articles")
+
     template = templates.get_template("articles.html")
     content = template.render(
         version=get_static_hash(),
         page="articles",
         user=user,
-        breadcrumbs=[("/", "Главная"), ("/articles", "Статьи")]
+        breadcrumbs=[("/", "Главная"), ("/articles", f"Статьи{page_text}")],
+        title=f"Статьи{page_text} | Dronperminov",
+        description="Полезные (и не очень) статьи, которыми мне хотелось бы поделиться",
+        params=params,
+        articles=articles,
+        total=total
     )
     return HTMLResponse(content=content)
 

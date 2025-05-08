@@ -1,4 +1,3 @@
-const INfINITE_SCROLL_INITIAL_STATUS = "initial"
 const INfINITE_SCROLL_LOADING_STATUS = "loading"
 const INfINITE_SCROLL_LOADED_STATUS = "loaded"
 const INfINITE_SCROLL_OUT_DATA_STATUS = "out-data"
@@ -14,7 +13,7 @@ class InfiniteScroll {
         this.pageSize = config.pageSize ?? 10
         this.offset = config.offset ?? 100
         this.maxHeight = config.maxHeight ?? 0
-        this.status = INfINITE_SCROLL_INITIAL_STATUS
+        this.status = INfINITE_SCROLL_LOADED_STATUS
 
         this.url = config.url
         this.getParams = config.getParams ?? null
@@ -25,7 +24,7 @@ class InfiniteScroll {
 
     Reset() {
         this.page = 0
-        this.status = INfINITE_SCROLL_INITIAL_STATUS
+        this.status = INfINITE_SCROLL_LOADED_STATUS
 
         this.block.innerHTML = ""
         this.loader.classList.add("hidden")

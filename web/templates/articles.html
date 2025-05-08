@@ -1,5 +1,3 @@
-{% set title = "Статьи | Dronperminov" %}
-{% set description = "Полезные (и не очень) статьи, которыми мне хотелось бы поделиться" %}
 {% include "components/header.html" %}
 
     <link rel="stylesheet" type="text/css" href="/styles/entities/article.css?v={{version}}">
@@ -9,12 +7,22 @@
     {% include "components/menu.html" %}
     {% include "components/breadcrumbs.html" %}
 
-    <h1>Статьи</h1>
-    <p>На этой странице можно найти различные полезные (и не очень) статьи, которыми мне очень сильно хочется поделиться с общественностью.</p>
+    <h1>Статьи{% if params.page > 0 %} – страница {{params.page + 1}}{% endif %}</h1>
+
+    {% if params.page == 0 %}<p>На этой странице можно найти различные полезные (и не очень) статьи, которыми мне очень сильно хочется поделиться с общественностью.</p>{% endif %}
 
     <div id="articles">
-        <div class="articles"></div>
+        <div class="articles">
+            {% for article in articles %}{% include "components/article_preview.html" %}{% endfor %}
+        </div>
     </div>
+
+    <noscript>
+        <div class="pagination">
+            {% if params.page > 0 %}<a class="link" href="/articles?page={{params.page}}">Назад</a>{% endif %}
+            {% if params.page_size * (params.page + 1) < total %}<a class="link" href="/articles?page={{params.page + 2}}">Вперёд</a>{% endif %}
+        </div>
+    </noscript>
 
     {% include "components/footer.html" %}
 
@@ -26,7 +34,8 @@
     <script>
         let config = {
             blockId: "articles",
-            pageSize: 10,
+            pageSize: {{params.page_size}},
+            page: {{params.page + 1}},
             url: "/search-articles",
 
             getParams: GetArticlesSearchParams,
@@ -34,7 +43,6 @@
         }
 
         let infiniteScroll = new InfiniteScroll(config)
-        infiniteScroll.LoadContent()
     </script>
 </body>
 </html>
