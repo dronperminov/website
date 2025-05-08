@@ -12,6 +12,8 @@ class CodeHighlight {
             spans = this.ParseCSS(text)
         else if (lang == "math")
             spans = this.ParseMath(text)
+        else if (lang == "json")
+            spans = this.ParseJson(text)
         else if (lang == "preudo")
             spans = this.ParsePreudo(text)
         else
@@ -154,6 +156,38 @@ class CodeHighlight {
         ].join("|"), "gi")
 
         return this.Parse(text, regexp)
+    }
+
+    ParseJson(text) {
+        let regexp = new RegExp([
+            `(?<line>\\n)`,
+            `(?<delimeter>[{}\\[\\]:,])`,
+            `(?<string>"(?:[^"\\\\\\n]|\\\\.)*("|\\n|$))`,
+            `(?<number>(-?(0|[1-9]\\d*)(\\.\\d+)?(e[+-]\\d+)?|\\b(true|false|null)\\b))`,
+            `(?<whitespace>\\s+)`,
+            `(?<other>.+)`
+        ].join("|"), "g")
+
+        let subparse = {
+            "string": (value) => this.ParseEscapeStringJson(value),
+        }
+
+        return this.Parse(text, regexp, subparse)
+    }
+
+    ParseEscapeStringJson(text) {
+        let spans = []
+        let last = 0
+
+        for (let match of text.matchAll(/^\\(["\\\/bfnrt]|u[\da-fA-F]{4})$/g)) {
+            let [fullMatch, escape] = match
+            spans.push(`<span class="code-string">${text.slice(last, match.index)}</span>`)
+            spans.push(`<span class="code-number"${escape}</span>`)
+            last = match.index + fullMatch.length
+        }
+
+        spans.push(`<span class="code-string">${text.slice(last)}</span>`)
+        return spans
     }
 
     ParsePreudo(text) {

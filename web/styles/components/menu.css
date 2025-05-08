@@ -1,8 +1,10 @@
 header {
     position: sticky;
-    padding: 1em 0;
+    padding: 1em 5px;
     top: 0;
     background: var(--background-color);
+    z-index: 999;
+    margin: 0 -5px;
 }
 
 header input[type="checkbox"], header .logo-hamb {
@@ -72,7 +74,7 @@ header nav .current-page svg {
 
     header {
         padding: 10px 0;
-        margin-bottom: 1em;
+        margin: 0 0 1em 0;
     }
 
     header .logo-hamb {

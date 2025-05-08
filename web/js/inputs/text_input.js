@@ -47,7 +47,7 @@ class TextInput {
 
     Error(message = "") {
         if (message)
-            ShowNotification(message, "error-notification", 3000)
+            ShowNotification({text: message, className: "error-notification", time: 3000})
 
         this.input.classList.add("error-input")
         this.input.focus()

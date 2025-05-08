@@ -37,7 +37,7 @@ function AddPost() {
         button.removeAttribute("disabled")
 
         if (response.status != SUCCESS_STATUS) {
-            ShowNotification(`Не удалось добавить пост.<br>Причина: ${response.message}`)
+            ShowNotification({text: `Не удалось добавить пост.<br>Причина: ${response.message}`})
             return
         }
 

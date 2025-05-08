@@ -51,6 +51,12 @@
 }
 
 @font-face {
+    font-family: Consolas;
+    src: url("/fonts/Consolas.ttf");
+    font-display: swap;
+}
+
+@font-face {
     font-family: Cambria Math;
     src: url("/fonts/CambriaMath.ttf");
     font-display: swap;

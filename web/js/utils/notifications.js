@@ -1,4 +1,6 @@
-function ShowNotification(text, className = "error-notification", showTime = 2000) {
+function ShowNotification(config = {}) {
+    const className = config.className ?? "error-notification"
+
     let notifications = document.getElementById("notifications")
 
     if (notifications === null)
@@ -6,23 +8,23 @@ function ShowNotification(text, className = "error-notification", showTime = 200
 
     let notification = MakeElement(null, {class: `notification ${className}`})
 
-    let icon = MakeElement(notification, {class: "notification-icon"})
-    let body = MakeElement(notification, {class: "notification-body"})
+    const icon = MakeElement(notification, {class: "notification-icon"})
+    const body = MakeElement(notification, {class: "notification-body"})
 
     if (className == "error-notification") {
         MakeElement(icon, {src: "/images/icons/error.svg"}, "img")
-        MakeElement(body, {class: "notification-title", innerText: "Ошибка"})
+        MakeElement(body, {class: "notification-title", innerText: config.header ?? "Ошибка"})
     }
     else if (className == "success-notification") {
         MakeElement(icon, {src: "/images/icons/success.svg"}, "img")
-        MakeElement(body, {class: "notification-title", innerText: "Успех"})
+        MakeElement(body, {class: "notification-title", innerText: config.header ?? "Успех"})
     }
     else {
         MakeElement(icon, {src: "/images/icons/info.svg"}, "img")
-        MakeElement(body, {class: "notification-title", innerText: "Информация"})
+        MakeElement(body, {class: "notification-title", innerText: config.header ?? "Информация"})
     }
 
-    MakeElement(body, {innerHTML: text})
+    MakeElement(body, {innerHTML: config.text ?? ""})
 
     notifications.prepend(notification)
 
@@ -35,6 +37,6 @@ function ShowNotification(text, className = "error-notification", showTime = 200
             setTimeout(() => {
                 notification.remove()
             }, 50)
-        }, showTime)
+        }, config.time ?? 2000)
     }, 50)
 }

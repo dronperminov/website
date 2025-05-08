@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 from uvicorn.config import LOGGING_CONFIG
 
 from src import database
-from src.api import api, articles, auth, blog, projects, research, templates
+from src.api import api, articles, auth, blog, projects, research, services, templates
 from src.utils.auth import get_user
 from src.utils.common import get_static_hash
 
@@ -32,6 +32,7 @@ def init_routers() -> None:
     app.include_router(research.router)
     app.include_router(blog.router)
     app.include_router(projects.router)
+    app.include_router(services.router)
 
 
 def init_static_directories() -> None:

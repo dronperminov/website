@@ -1,0 +1,132 @@
+.highlight-input {
+    position: relative;
+}
+
+.highlight-input .editor-panel {
+    display: flex;
+    width: 100%;
+    height: 550px;
+    min-height: 400px;
+    resize: vertical;
+    overflow: hidden;
+    position: relative;
+}
+
+.highlight-input .editor-highlight, .highlight-input .editor-input, .highlight-input .gutter {
+    font-family: Consolas;
+    font-size: 16px;
+    line-height: 20px;
+    white-space: pre;
+}
+
+.highlight-input .gutter {
+    width: 40px;
+    color: #999;
+    text-align: right;
+    user-select: none;
+    overflow: hidden;
+    position: relative;
+    padding: 5px 8px;
+    border-right: 1px solid #dddddd;
+}
+
+.highlight-input-3-digits .gutter {
+    width: 50px;
+}
+
+.highlight-input-4-digits .gutter {
+    width: 60px;
+}
+
+.highlight-input-5-digits .gutter {
+    width: 70px;
+}
+
+.highlight-input .editor {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+}
+
+.highlight-input .editor-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--text-color);
+    border: none;
+    width: 100%;
+    height: 100%;
+    resize: none;
+    z-index: 3;
+    outline: none;
+    padding: 5px;
+}
+
+.highlight-input .editor-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1;
+    pointer-events: none;
+    padding: 5px;
+}
+
+.highlight-input .status-bar {
+    user-select: none;
+    border-top: 1px solid #dddddd;
+    padding: 5px;
+    font-size: 14px;
+    color: #666;
+    display: grid;
+    grid-template-columns: 1fr 12px;
+    align-items: center;
+    grid-gap: 5px;
+}
+
+.highlight-input .status-bar .status span {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 100%;
+}
+
+.highlight-input .status-bar .success-status span {
+    background: #9bdd92;
+    border: 1px solid var(--success-color);
+}
+
+.highlight-input .status-bar .error-status span {
+    background: #ff8888;
+    border: 1px solid var(--error-color);
+}
+
+.highlight-input-content {
+    color: var(--text-color);
+}
+
+.highlight-input-number, .highlight-input-json-bool, .highlight-input-json-null {
+    color: #0b57d0;
+}
+
+.highlight-input-string {
+    color: #b3261e;
+}
+
+.highlight-input-error {
+    background: #f4433680;
+}
+
+@media (max-width: 767px) {
+    .highlight-input .editor-panel {
+        height: 350px;
+        min-height: 300px;
+    }
+
+    .highlight-input .editor-highlight, .highlight-input .editor-input, .highlight-input .gutter {
+        font-size: 14px;
+        line-height: 17px;
+    }
+}

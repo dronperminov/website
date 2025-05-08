@@ -1,0 +1,161 @@
+.json-formatter {
+    display: grid;
+    grid-template-columns: 1fr 310px;
+    border: 1px solid var(--border-color);
+    background: #fefefe;
+    border-radius: 8px;
+    background: var(--section-background-color);
+    position: relative;
+    z-index: 5;
+}
+
+.json-formatter-full-screen {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 1000;
+    grid-template-rows: 34px 1fr;
+    margin: 1px 1px 0 1px;
+}
+
+body:has(.json-formatter-full-screen) {
+    overflow: hidden;
+}
+
+.json-formatter-full-screen .highlight-input .editor-panel {
+    height: calc(100dvh - 65px);
+    resize: none;
+}
+
+.json-formatter .top-panel {
+    grid-column: 1 / span 2;
+    padding: 5px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.8em;
+    display: grid;
+    grid-template-columns: 1fr max-content;
+}
+
+.json-formatter .top-panel svg {
+    vertical-align: middle;
+    cursor: pointer;
+    stroke: var(--border-color);
+    margin-left: 2px;
+}
+
+.json-formatter .top-panel svg:hover {
+    stroke: var(--main-color);
+}
+
+.json-formatter .basic-input, .json-formatter .basic-button {
+    width: 100%;
+}
+
+.json-formatter .controls {
+    padding: 5px;
+    border-left: 1px solid var(--border-color);
+}
+
+.json-formatter .controls > div:not(:last-child) {
+    margin-bottom: 1em;
+}
+
+.json-formatter .controls label {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--main-color);
+    cursor: pointer;
+}
+
+.json-formatter .controls input {
+    border-bottom: 1px solid #dddddd;
+}
+
+.json-formatter .controls input:focus {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.json-formatter .controls button {
+    padding: 0.5em 0.8em;
+    border-radius: 0.3em;
+    flex: 140px;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    align-items: center;
+}
+
+.json-formatter .controls button img {
+    width: 1em;
+    vertical-align: middle;
+}
+
+.json-formatter .controls .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.json-formatter .controls .description {
+    font-size: 0.65em;
+    color: var(--description-color);
+}
+
+.drag-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: #f7f7f7dd;
+    display: grid;
+    align-items: center;
+    justify-items: center;
+    font-size: 3em;
+    border-radius: 8px;
+    padding: 1em;
+    z-index: 4;
+    user-select: none;
+    pointer-events: none;
+    opacity: 0;
+    transition: 0.2s opacity;
+}
+
+.drag-drop .drag-panel {
+    opacity: 1;
+    transition: 0.2s opacity;
+}
+
+@media (max-width: 1023px) {
+    .json-formatter {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .json-formatter .top-panel {
+        grid-column: 1;
+    }
+
+    .json-formatter .controls {
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .json-formatter .controls .buttons {
+        grid-column: 1 / span 2;
+    }
+}
+
+@media (max-width: 767px) {
+    .json-formatter .controls {
+        display: block;
+    }
+
+    .json-formatter-full-screen .controls {
+        border-top: none;
+    }
+}

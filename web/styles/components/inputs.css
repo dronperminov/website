@@ -9,13 +9,8 @@
     transition: border-color 150ms ease-in;
 }
 
-
 .basic-input:disabled, .basic-input:disabled:hover, .basic-input:disabled:focus {
     color: var(--border-color);
-}
-
-.basic-input::-webkit-outer-spin-button, .basic-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
 }
 
 .basic-textarea {
@@ -50,9 +45,7 @@
     font-size: 0.95em;
     cursor: pointer;
     outline: none;
-    display: block;
     text-align: center;
-    width: 100%;
     transition: 0.3s;
 }
 

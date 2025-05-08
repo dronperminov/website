@@ -38,7 +38,7 @@ function GetSignUpParams() {
 
     let response = grecaptcha.getResponse()
     if (response.length == 0) {
-        ShowNotification("Капча не пройдена", "error-notification")
+        ShowNotification({text: "Капча не пройдена", className: "error-notification"})
         return null
     }
 
@@ -59,7 +59,7 @@ function SignIn() {
 
     SendRequest("/sign-in", params).then(response => {
         if (response.status != SUCCESS_STATUS) {
-            ShowNotification(response.message, "error-notification", 3000)
+            ShowNotification({text: response.message, className: "error-notification", time: 3000})
             return
         }
 
@@ -75,7 +75,7 @@ function SignUp() {
 
     SendRequest("/sign-up", params).then(response => {
         if (response.status != SUCCESS_STATUS) {
-            ShowNotification(response.message, "error-notification", 3000)
+            ShowNotification({text: response.message, className: "error-notification", time: 3000})
             return
         }
 

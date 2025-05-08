@@ -1,0 +1,258 @@
+{% include "components/header.html" %}
+
+    <link rel="stylesheet" type="text/css" href="/styles/utils/code_highlight.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/components/inputs.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/inputs/highlight_input.css?v={{version}}">
+    <link rel="stylesheet" type="text/css" href="/styles/services/json_formatter.css?v={{version}}">
+</head>
+<body>
+    {% include "components/menu.html" %}
+    {% include "components/breadcrumbs.html" %}
+
+    <div class="json-formatter" id="json-formatter">
+        <div class="top-panel">
+            <div>
+                <span title="Валидировать" onclick="formatter.Validate()">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke-width="1.5"/>
+                        <path d="M8.5 12.5L10.5 14.5L15.5 9.5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+
+                <span title="Форматировать" onclick="formatter.Format()">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15.5 9L15.6716 9.17157C17.0049 10.5049 17.6716 11.1716 17.6716 12C17.6716 12.8284 17.0049 13.4951 15.6716 14.8284L15.5 15" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M13.2939 7.17041L11.9998 12L10.7058 16.8297" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M8.50019 9L8.32861 9.17157C6.99528 10.5049 6.32861 11.1716 6.32861 12C6.32861 12.8284 6.99528 13.4951 8.32861 14.8284L8.50019 15" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke-width="1.5"/>
+                    </svg>                
+                </span>
+
+                <span title="Минифицировать" onclick="formatter.Minimize()">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10.5 13.5H7.5M10.5 13.5V16.5M10.5 13.5L7 17" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.5 10.5H16.5M13.5 10.5V7.5M13.5 10.5L17 7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M10.5 10.5H7.5M10.5 10.5V7.5M10.5 10.5L7 7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.5 13.5H16.5M13.5 13.5V16.5M13.5 13.5L17 17" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke-width="1.5"/>
+                    </svg>
+                </span>
+
+                <span title="Скачать" onclick="formatter.Download()">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 7L12 14M12 14L15 11M12 14L9 11" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 17H12H8" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke-width="1.5"/>
+                    </svg>
+                </span>
+
+                <span title="Загрузить файл" onclick="formatter.Upload()">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 17L12 10M12 10L15 13M12 10L9 13" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M16 7H12H8" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke-width="1.5"/>
+                    </svg>
+                </span>
+
+                <span title="Скопировать в буфер обмена" onclick="formatter.Copy()">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 11C6 8.17157 6 6.75736 6.87868 5.87868C7.75736 5 9.17157 5 12 5H15C17.8284 5 19.2426 5 20.1213 5.87868C21 6.75736 21 8.17157 21 11V16C21 18.8284 21 20.2426 20.1213 21.1213C19.2426 22 17.8284 22 15 22H12C9.17157 22 7.75736 22 6.87868 21.1213C6 20.2426 6 18.8284 6 16V11Z" stroke-width="1.5"/>
+                        <path d="M6 19C4.34315 19 3 17.6569 3 16V10C3 6.22876 3 4.34315 4.17157 3.17157C5.34315 2 7.22876 2 11 2H15C16.6569 2 18 3.34315 18 5" stroke-width="1.5"/>
+                    </svg>
+                </span>
+
+                <span title="Очистить" onclick="formatter.Clear()">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20.5001 6H3.5" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M18.8332 8.5L18.3732 15.3991C18.1962 18.054 18.1077 19.3815 17.2427 20.1907C16.3777 21 15.0473 21 12.3865 21H11.6132C8.95235 21 7.62195 21 6.75694 20.1907C5.89194 19.3815 5.80344 18.054 5.62644 15.3991L5.1665 8.5" stroke-width="1.5" stroke-linecap="round"/>
+                        <path d="M6.5 6C6.55588 6 6.58382 6 6.60915 5.99936C7.43259 5.97849 8.15902 5.45491 8.43922 4.68032C8.44784 4.65649 8.45667 4.62999 8.47434 4.57697L8.57143 4.28571C8.65431 4.03708 8.69575 3.91276 8.75071 3.8072C8.97001 3.38607 9.37574 3.09364 9.84461 3.01877C9.96213 3 10.0932 3 10.3553 3H13.6447C13.9068 3 14.0379 3 14.1554 3.01877C14.6243 3.09364 15.03 3.38607 15.2493 3.8072C15.3043 3.91276 15.3457 4.03708 15.4286 4.28571L15.5257 4.57697C15.5433 4.62992 15.5522 4.65651 15.5608 4.68032C15.841 5.45491 16.5674 5.97849 17.3909 5.99936C17.4162 6 17.4441 6 17.5 6" stroke-width="1.5"/>
+                    </svg>
+                </span>
+            </div>
+
+            <div>
+                <span id="minimize-icon" class="hidden" title="Вернуть исходый вид">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke-width="1.5"/>
+                        <path d="M10.5 13.5H7.5M10.5 13.5V16.5M10.5 13.5L7 17" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M13.5 10.5H16.5M13.5 10.5V7.5M13.5 10.5L17 7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+
+                <span id="maximize-icon" title="Раскрыть на весь экран">
+                    <svg width="24px" height="24px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2 12C2 7.28595 2 4.92893 3.46447 3.46447C4.92893 2 7.28595 2 12 2C16.714 2 19.0711 2 20.5355 3.46447C22 4.92893 22 7.28595 22 12C22 16.714 22 19.0711 20.5355 20.5355C19.0711 22 16.714 22 12 22C7.28595 22 4.92893 22 3.46447 20.5355C2 19.0711 2 16.714 2 12Z" stroke-width="1.5"/>
+                        <path d="M17 7H14M17 7V10M17 7L13.5 10.5M7 17H10M7 17V14M7 17L10.5 13.5" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </span>
+            </div>
+        </div>
+        <div class="highlight-input" id="highlight-input">
+            <div class="editor-panel">
+                <div class="gutter"></div>
+                <div class="editor">
+                    <div class="editor-highlight"></div>
+                    <textarea class="editor-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">{
+  "type": "line",
+  "points": [{"x": 1, "y": 1}, {"x": 0.5, "y": -2}, {"x": 1, "y": 7}],
+  "metadata": {
+    "author": "dronperminov",
+    "timestamp": "2025-05-08T12:00:00Z"
+  }
+}</textarea>
+                </div>
+            </div>
+            <div class="status-bar">
+                <div class="cursor"></div>
+                <div class="status"><span></span></div>
+            </div>
+        </div>
+        <div class="controls">
+            <div>
+                <label>Отступ <input type="number" class="basic-input" min="1" data-value="2" value="2" id="indent"></label>
+                <div class="description">Количество пробелов, добавляемых на очередном уровне вложенности</div>
+            </div>
+            <div>
+                <label>Максимальная глубина <input type="number" class="basic-input" min="0" data-value="0" value="0" id="max-depth"></label>
+                <div class="description">Максимальный уровень вложенности, до которого применяется форматирование с отступами (0 – форматировать целиком)</div>
+            </div>
+            <div class="buttons">
+                <button class="basic-button" onclick="formatter.Format()"><img src="/images/services/json-formatter/code.svg" alt="prettify json icon"> Форматировать</button>
+                <button class="basic-button" onclick="formatter.Minimize()"><img src="/images/services/json-formatter/minimize.svg" alt="minimize json icon"> Минифицировать</button>
+                <button class="basic-button" onclick="formatter.Validate()"><img src="/images/services/json-formatter/check.svg" alt="validate json icon"> Валидировать</button>
+                <button class="basic-button" onclick="formatter.Copy()"><img src="/images/services/json-formatter/copy.svg" alt="copy icon"> Скопировать</button>
+                <button class="basic-button" onclick="formatter.Download()"><img src="/images/services/json-formatter/download.svg" alt="download icon"> Скачать</button>
+                <button class="basic-button" onclick="formatter.Upload()"><img src="/images/services/json-formatter/upload.svg" alt="upload icon"> Загрузить</button>
+            </div>
+        </div>
+        <div class="drag-panel">
+            <div>Перетащите файл</div>
+        </div>
+    </div>
+
+    <section>
+        <h1>Умный онлайн JSON форматтер с глубиной форматирования и валидацией</h1>
+
+        <p>Ищете удобный и надёжный инструмент для работы с JSON? Этот онлайн JSON форматтер позволяет мгновенно форматировать, минимизировать и валидировать JSON-код прямо в браузере – без установки и регистрации.</p>
+
+        <h2>Ключевые особенности инструмента:</h2>
+
+        <ul>
+            <li><b class="highlight">Форматирование с ограничением уровня вложенности</b>. Укажите желаемую глубину – и вложенные структуры будут представлены в компактном виде. Это особенно удобно при работе с большими JSON-массивами и вложенными объектами.</li>
+            <li><b class="highlight">Понятная валидация</b>. Ошибки отображаются с точным описанием, чтобы вы могли сразу увидеть, что пошло не так – без лишних догадок.</li>
+            <li><b class="highlight">Гибкие настройки</b>. Настройте количество пробелов для отступов и глубину форматирования под свой стиль.</li>
+            <li><b class="highlight">Минификация JSON</b>. Удалите все лишние пробелы и переносы строк одним кликом – для компактного хранения и передачи.</li>
+            <li>Поддержка <b class="highlight">вставки текста</b> и <b class="highlight">загрузки файла</b>. Работайте с JSON так, как вам удобно.</li>
+        </ul>
+
+        <p>Обратите внимание: это <b class="highlight">не редактор JSON</b>, а специализированный инструмент для его анализа, проверки и преобразования. Однако вы можете использовать его как облегчённый редактор, если вам достаточно базовых функций.</p>
+
+        <h2>Примеры</h2>
+
+        <p>Пусть, у нас есть <code>json</code> следующего вида:</p>
+        <div class="code">
+            <div class="code-title">Пример JSON</div>
+            <pre data-lang="json">{
+  "type": "line",
+  "points": [{"x": 1, "y": 1}, {"x": 0.5, "y": -2}, {"x": 1, "y": 7}],
+  "metadata": {
+    "author": "dronperminov",
+    "timestamp": "2025-05-08T12:00:00Z"
+  }
+}
+            </pre>
+        </div>
+
+        <p>При форматировании <b class="highlight">без ограничения</b> глубины (и двумя пробельными оступами) результат будет таким:</p>
+
+        <div class="code">
+            <div class="code-title">Форматирование без ограничения глубины (<code>0</code>)</div>
+            <pre data-lang="json">{
+  "type": "line",
+  "points": [
+    {
+      "x": 1,
+      "y": 1
+    },
+    {
+      "x": 0.5,
+      "y": -2
+    },
+    {
+      "x": 1,
+      "y": 7
+    }
+  ],
+  "metadata": {
+    "author": "dronperminov",
+    "timestamp": "2025-05-08T12:00:00Z"
+  }
+}
+            </pre>
+        </div>
+
+        <p>Если ограничить форматирование до <b class="highlight">первого</b> уровня, то раскрыты будут только ключи, а все вложенные структуры свернутся в компактный однострочный формат:</p>
+
+        <div class="code">
+            <div class="code-title">Форматирование до уровня <code>1</code></div>
+            <pre data-lang="json">{
+  "type": "line",
+  "points": [{"x": 1, "y": 1}, {"x": 0.5, "y": -2}, {"x": 1, "y": 7}],
+  "metadata": {"author": "dronpermninov", "timestamp": "2025-05-08T12:00:00Z"}
+}
+            </pre>
+        </div>
+
+        <p>А вот, что будет, если ограничить форматирование <b class="highlight">вторым</b> уровнем (смотрится более приятно и компактнее, не правда ли?):</p>
+
+        <div class="code">
+            <div class="code-title">Форматирование до уровня <code>2</code></div>
+            <pre data-lang="json">{
+  "type": "line",
+  "points": [
+    {"x": 1, "y": 1},
+    {"x": 0.5, "y": -2},
+    {"x": 1, "y": 7}
+  ],
+  "metadata": {
+    "author": "dronperminov",
+    "timestamp": "2025-05-08T12:00:00Z"
+  }
+}
+            </pre>
+        </div>
+
+        <p>При минификации введённые данные свернутся в однострочный компактный вид:</p>
+
+        <div class="code">
+            <div class="code-title">Минификация JSON</div>
+            <pre data-lang="json">{"type":"line","points":[{"x":1,"y":1},{"x":0.5,"y":-2},{"x":1,"y":7}],"metadata":{"author":"dronperminov","timestamp":"2025-05-08T12:00:00Z"}}</pre>
+        </div>
+
+        <h2>Зачем это нужно?</h2>
+
+        <p>Такой способ позволяет быстро просматривать структуру JSON, не теряя детали, но значительно сокращая визуальный объём. Особенно удобно при отладке, логировании или отправке предварительно форматированных данных.</p>
+    </section>
+
+    {% include "components/footer.html" %}
+
+    <script src="/js/inputs/highlight_input.js?v={{version}}"></script>
+    <script src="/js/utils/code_highlight.js?v={{version}}"></script>
+    <script src="/js/parsers/json_parser.js?v={{version}}"></script>
+    <script src="/js/services/json_formatter.js?v={{version}}"></script>
+    <script>
+        const config = {
+            block: document.getElementById("json-formatter"),
+            input: document.getElementById("highlight-input"),
+            indent: document.getElementById("indent"),
+            maxDepth: document.getElementById("max-depth")
+        }
+
+        const formatter = new JsonFormatter(config)
+
+        const codeHighlight = new CodeHighlight()
+        for (let code of document.querySelectorAll(".code pre"))
+            codeHighlight.Highlight(code)
+    </script>
+</body>
+</html>

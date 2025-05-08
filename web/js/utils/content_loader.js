@@ -26,7 +26,7 @@ class ContentLoader {
 
         SendRequest(this.url, params).then(response => {
             if (response.status != SUCCESS_STATUS) {
-                ShowNotification(`Не удалось загрузить данные<br><b>Причина</b>: ${response.message}`, "error-notification", 3500)
+                ShowNotification({header: "Не удалось загрузить данные", text: `<b>Причина</b>: ${response.message}`, className: "error-notification", time: 3500})
                 setTimeout(() => this.Load(), 3000)
                 return
             }
