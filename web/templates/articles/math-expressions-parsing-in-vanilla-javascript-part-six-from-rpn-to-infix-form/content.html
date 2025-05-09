@@ -1,0 +1,251 @@
+<p class="note">Цикл статей о создании собственного парсера выражений: от токенизации до полноценного синтаксического разбора.</p>
+
+<h2>Оглавление цикла</h2>
+
+<ul>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-one-tokenization">Часть 1. Токенизация</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">Часть 2. Вычисление выражения в обратной польской записи</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-three-shunting-yard-parser">Часть 3. Алгоритм сортировочной станции</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-four-recursive-descent-parser">Часть 4. Парсер рекурсивного спуска</a></li>
+    <li><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-five-pratt-parser">Часть 5. Парсер Пратта</a></li>
+    <li>Часть 6. Перевод из постфиксной формы в инфиксную (вы находитесь здесь)</li>
+</ul>
+
+<p>В предыдущих частях мы построили полноценную систему разбора и вычисления математических выражений: реализовали токенизацию, синтаксический разбор с помощью трёх различных парсеров, поддержку унарных операторов, функций с переменным числом аргументов и проверку синтаксических ошибок. Всё это позволило получать корректные выражения в виде постфиксной записи (RPN) и эффективно их вычислять.</p>
+
+<p>Однако постфиксная форма плохо подходит для отображения: её структура непрозрачна, а порядок выполнения операций неочевиден без подготовки. В этой части мы научимся преобразовывать выражение из RPN обратно в человекочитаемую инфиксную форму – с корректными скобками, приоритетами и унарными знаками.</p>
+
+<p>Такой функционал необходим, если вы хотите визуализировать введённые выражения. Более того, это отличный способ убедиться, что ваша система разбора работает правильно: если инфиксное выражение, преобразованное в RPN и обратно, совпадает с исходным (с точностью до допустимой расстановки скобок), значит, всё идёт как надо.</p>
+
+<h2>Требования к преобразованию</h2>
+
+<p>Для восстановления инфиксной формы из RPN нам потребуется пройти по списку токенов и, как и при вычислении, использовать стек. Однако вместо чисел мы будем складывать текстовые подвыражения. Для каждого оператора (в том числе унарного) и функции нам нужно будет правильно:</p>
+
+<ul>
+    <li>Выбрать нужное число аргументов из стека (так что без описаний функций не обойтись).</li>
+    <li>Обернуть аргументы скобками, если это необходимо для сохранения приоритетов и ассоциативности.</li>
+    <li>Вернуть результат обратно в стек.</li>
+</ul>
+
+<p>Как и во всех прошлых частях, реализовывать будем в единственном файле <code>expression_infix_builder.js</code> с классом <code>ExpressionInfixBuilder</code>.</p>
+
+<h2>Интерфейс класса</h2>
+
+<p>Будем придерживаться привычной структуры. Создадим класс <code>ExpressionInfixBuilder</code>, у которого будет метод <code>build(rpn)</code>, принимающий массив токенов (как и ранее во всех частях цикла). Каждый токен должен содержать хотя бы два свойства: тип (<code>type</code>) и значение (<code>value</code>). Тип определяет, что это за элемент (<code>number</code>, <code>variable</code>, <code>constant</code>, <code>operator</code> или <code>function</code>), а значение – конкретный символ.
+
+<p>Для корректного восстановления мы должны учитывать приоритеты операторов и их ассоциативность, чтобы обернуть подвыражения в скобки, если это необходимо. Также договоримся, что все операции за исключением возведения в степень (<code>^</code>) и унарного минуса (<code>~</code>) мы будем обрамлять пробелами для более красивого вида.</p>
+
+<div class="code">
+    <div class="code-title">Заготовка класса ExpressionInfixBuilder</div>
+<pre data-lang="js">
+class ExpressionInfixBuilder {
+    constructor(functions) {
+        this.functions = functions
+        this.operators = {
+            "+": {args: 2, precedence: 1, associate: "left", value: " + "},
+            "-": {args: 2, precedence: 1, associate: "left", value: " - "},
+            "*": {args: 2, precedence: 2, associate: "left", value: " * "},
+            "/": {args: 2, precedence: 2, associate: "left", value: " / "},
+            "^": {args: 2, precedence: 3, associate: "right", value: "^"},
+            "~": {args: 1, precedence: 3, associate: "right", value: "-"}
+        }
+
+        this.constants = {
+            "pi": "π"
+        }
+    }
+
+    build(rpn) {
+
+    }
+}
+</pre>
+</div>
+
+<h2>Переводим выражения</h2>
+
+<p>Как уже обсуждалось ранее, алгоритм преобразования выражения из постфиксной записи в инфиксную во многом повторяет <a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-two-reverse-polish-notation-evaluator">алгоритм вычисления выражения</a>. Однако вместо того чтобы выполнять операции и получать численные результаты, мы будем поэтапно строить строковое представление выражения. При этом возникает важная особенность: так как в постфиксной записи нет скобок, простая последовательная сборка выражения может привести к неверному порядку вычислений. Например, при прямом преобразовании выражения <code>1 2 3 + *</code> получится <code>1 * 2 + 3</code> вместо ожидаемого <code>1 * (2 + 3)</code>. Чтобы восстановить правильную структуру, необходимо правильно расставлять скобки.</p>
+
+<p>Самым простым решением было бы заключать каждый результат операции в скобки, но в этом случае выражение быстро становится сильно перегруженным и неудобным для восприятия. Вместо этого мы будем учитывать приоритеты операторов: если у текущего оператора приоритет выше, чем у аргумента, – аргумент берётся в скобки. Если приоритеты совпадают, тогда нужно учитывать ассоциативность оператора. Если ассоциативность не совпадает с позицией аргумента (левый или правый), то и в этом случае добавляются скобки. Такой подход позволяет восстанавливать выражения, близкие к оригинальным по форме, но с гарантией правильного порядка вычислений.</p>
+
+<p>Заниматься определением, нужны ли скобки для оператора, будет метод <code>addParenthesis</code>, принимающий операнд, выполняемый оператор и сторону, с которой обрабатывается опеанд. Для функций всё гораздо проще. Поскольку вызов функции всегда обрамляется скобками и разделителем, все аргументы можно просто добавлять как есть:</p>
+
+<div class="code">
+    <div class="code-title">Переводим выражение в инфиксную форму</div>
+<pre data-lang="js">
+build(rpn) {
+    const stack = []
+
+    for (const token of rpn) {
+        if (token.type === "number" || token.type === "variable") {
+            stack.push({value: token.value, precedence: Infinity})
+        }
+        else if (token.type === "constant") {
+            stack.push({value: this.constants[token.value] ?? token.value, precedence: Infinity})
+        }
+        else if (token.type === "operator") {
+            const operator = this.operators[token.value]
+            const args = stack.splice(-operator.args)
+
+            if (args.length === 1) {
+                const arg = this.addParenthesis(args[0], operator, "right")
+                stack.push({value: `${operator.value}${arg}`, precedence: operator.precedence})
+            }
+            else {
+                const arg1 = this.addParenthesis(args[0], operator, "left")
+                const arg2 = this.addParenthesis(args[1], operator, "right")
+                stack.push({value: `${arg1}${operator.value}${arg2}`, precedence: operator.precedence})
+            }
+        }
+        else if (token.type === "function") {
+            const args = stack.splice(-this.functions[token.value].args)
+            stack.push({value: `${token.value}(${args.map(arg => arg.value).join(", ")})`, precedence: Infinity})
+        }
+    }
+
+    return stack.pop().value
+}
+
+addParenthesis(operand, operator, side) {
+    if (operand.precedence < operator.precedence || operand.precedence === operator.precedence && operator.associate !== side)
+        return `(${operand.value})`
+
+    return operand.value
+}
+</pre>
+</div>
+
+<h2>Обновляем наш парсер</h2>
+
+<p>Давайте добавим созданный класс в наш парсер математических выражений и дополним его методом <code>toInfix</code>:</p>
+
+<div class="code">
+    <div class="code-title">Дополняем наш парсер</div>
+<pre data-lang="js">
+class ExpressionParser {
+    constructor(expression) {
+        ...
+
+        this.infixBuilder = new ExpressionInfixBuilder(functions)
+    }
+
+    toInfix() {
+        return this.infixBuilder.build(this.rpn)
+    }
+}
+</pre>
+</div>
+
+<p>И теперь проверим наш класс в деле:</p>
+
+<div class="code">
+    <div class="code-title">Проверяем созданный класс</div>
+<pre data-lang="js">
+const expressions = [
+    "1 + 2 * 3",
+    "(1 + 2) * 3",
+    "(1 + 2) * (3 + 4)",
+    "2^2^3",
+    "-2^(2^3)",
+    "-(2^2)^3",
+    "-2^-2^-3",
+    "sin(2*pi*x)^2 + cos(-y)^2",
+    "-max(-cos(pi/2), (1+2)^2^3)"
+]
+
+for (const expression of expressions) {
+    const parser = new ExpressionParser(expression)
+    console.log(`${expression} -> ${parser.toInfix()}`)
+}
+
+/*
+ *   1 + 2 * 3 -> 1 + 2 * 3
+ *   (1 + 2) * 3 -> (1 + 2) * 3
+ *   (1 + 2) * (3 + 4) -> (1 + 2) * (3 + 4)
+ *   2^2^3 -> 2^2^3
+ *   -2^(2^3) -> -2^2^3
+ *   -(2^2)^3 -> -(2^2)^3
+ *   -2^-2^-3 -> -2^-2^-3
+ *   sin(2*pi*x)^2 + cos(-y)^2 -> sin(2 * π * x)^2 + cos(-y)^2
+ *   -max(-cos(pi/2), (1+2)^2^3) -> -max(-cos(π / 2), (1 + 2)^2^3)
+ */
+</pre>
+</div>
+
+<h2>Заключеине</h2>
+
+<p>В этой части мы всего за 58 строк ванильного Javascript кода научились восстанавливать инфиксную форму выражения по его постфиксной записи и ещё немного расширили наш парсер. Хотя на первый взгляд задача кажется простой – нужно просто заменить вычисления на сборку строк – на практике требуется аккуратно расставлять скобки, чтобы сохранить порядок операций. Для этого мы учли приоритеты операторов и их ассоциативность. Результатом стал модуль, способный превращать любое корректное RPN-выражение в человекочитаемую форму, максимально близкую к оригиналу.</p>
+
+<p>На этом цикл статей по разбору математических выражений завершается. Спасибо, что прочитали и, надеюсь, вам удалось узнать что-то новое!</p>
+
+<h3>Куда же без исходников?</h3>
+
+<div class="code">
+    <div class="code-title">Итоговый файл <a class="link" href="/media/articles/{{article.link}}/expression_infix_builder.js" download>expression_infix_builder.js</a></div>
+<pre data-lang="js">
+class ExpressionInfixBuilder {
+    constructor(functions) {
+        this.functions = functions
+        this.operators = {
+            "+": {args: 2, precedence: 1, associate: "left", value: " + "},
+            "-": {args: 2, precedence: 1, associate: "left", value: " - "},
+            "*": {args: 2, precedence: 2, associate: "left", value: " * "},
+            "/": {args: 2, precedence: 2, associate: "left", value: " / "},
+            "^": {args: 2, precedence: 3, associate: "right", value: "^"},
+            "~": {args: 1, precedence: 3, associate: "right", value: "-"}
+        }
+
+        this.constants = {
+            "pi": "π"
+        }
+    }
+
+    build(rpn) {
+        const stack = []
+
+        for (const token of rpn) {
+            if (token.type === "number" || token.type === "variable") {
+                stack.push({value: token.value, precedence: Infinity})
+            }
+            else if (token.type === "constant") {
+                stack.push({value: this.constants[token.value] ?? token.value, precedence: Infinity})
+            }
+            else if (token.type === "operator") {
+                const operator = this.operators[token.value]
+                const args = stack.splice(-operator.args)
+
+                if (args.length === 1) {
+                    const arg = this.addParenthesis(args[0], operator, "right")
+                    stack.push({value: `${operator.value}${arg}`, precedence: operator.precedence})
+                }
+                else {
+                    const arg1 = this.addParenthesis(args[0], operator, "left")
+                    const arg2 = this.addParenthesis(args[1], operator, "right")
+                    stack.push({value: `${arg1}${operator.value}${arg2}`, precedence: operator.precedence})
+                }
+            }
+            else if (token.type === "function") {
+                const args = stack.splice(-this.functions[token.value].args)
+                stack.push({value: `${token.value}(${args.map(arg => arg.value).join(", ")})`, precedence: Infinity})
+            }
+        }
+
+        return stack.pop().value
+    }
+
+    addParenthesis(operand, operator, side) {
+        if (operand.precedence < operator.precedence || operand.precedence === operator.precedence && operator.associate !== side)
+            return `(${operand.value})`
+
+        return operand.value
+    }
+}
+</pre>
+</div>
+
+<p>А так же <a class="link" href="/media/articles/{{article.link}}/expression_parser.js" download>expression_parser.js</a> – парсер математических выражений, использующий созданный класс из этой части.</p>
+
+<div class="two-links">
+    <p><a class="link" href="/articles/math-expressions-parsing-in-vanilla-javascript-part-five-pratt-parser">Часть 5. Парсер Пратта</a></p>
+    <p></p>
+</div>
