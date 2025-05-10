@@ -46,7 +46,7 @@ class CodeHighlight {
             `(?<comment>//.*|/\\*[\\s\\S]+?\\*/)`,
             `(?<keyword>\\b(if|else|for|while|class|const|let|var|function|return|new|this|extends|constructor|continue|break|throw|try|catch|in|of)\\b)`,
             `(?<js_namespace>\\b(Math|console|navigator|document|window|Array|Set|Map|RegExp|Error|BigInt|Object)\\b)`,
-            `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|\\btrue\\b|\\bfalse\\b|\\bnull\\b))`,
+            `(?<number>(-?\\d+(\\.\\d*)?([eE][-+]?\\d+)?|0b[01]+|0o[0-7]+|0x[0-9a-fA-F]+|\\btrue\\b|\\bfalse\\b|\\bnull\\b|\\bInfinity\\b))`,
             `(?<string>'[^']*'|"[^"]*"|\`[^\`]*\`)`,
             `(?<js_function>\\b[a-zA-Z_]\\w*\\b)(?=\\()`,
             `(?<js_identifier>\\b[a-zA-Z_]\\w*\\b)`,
@@ -230,7 +230,7 @@ class CodeHighlight {
     MatchToToken(match) {
         for (let [type, value] of Object.entries(match.groups))
             if (value)
-                return {type: type.replace(/_/g, "-"), value: value.replace("<", "&lt;").replace(">", "&gt;")}
+                return {type: type.replace(/_/g, "-"), value: value.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
 
         return null
     }
