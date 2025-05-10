@@ -18,8 +18,8 @@ async def get_json_formatter(user: Optional[User] = Depends(get_user)) -> HTMLRe
         version=get_static_hash(),
         page="json_formatter",
         user=user,
-        title="JSON Formatter & Minifier – онлайн форматирование, подсветка и сжатие JSON | Dronperminov",
-        description="Форматируйте, минимизируйте и подсвечивайте JSON онлайн. Просто вставьте код, загрузите файл или укажите ссылку – всё бесплатно и быстро.",
+        title="JSON форматтер с контролем глубины и валидацией | Dronperminov",
+        description="Онлайн JSON форматтер с уникальной функцией ограничения глубины форматирования. Поддерживает минификацию, валидацию и гибкие настройки.",
         keywords=", ".join([
             "json formatter", "json minifier", "онлайн json", "форматировать json", "подсветка json",
             "сжать json", "beautify json", "форматирование json онлайн", "json online tool"
