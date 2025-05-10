@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Linear chart</title>
+</head>
+<body>
+    <svg id="linear-chart"></svg>
+
+    <script src="linear_chart.js"></script>
+    <script>
+        const config = {
+            svg: document.getElementById("linear-chart"),
+            padding: {bottom: 25, top: 25},
+            line: {
+                color: "#fe7a81",
+                background: "#ffddd7"
+            },
+            marker: {
+                radius: 5,
+                color: "#fe7a81",
+                background: "#ffffff",
+                width: 60,
+                height: 280
+            },
+            value: {size: 11, color: "#fe7a81"},
+            label: {size: 10, color: "#888"}
+        }
+
+        const data = [
+            {value: 6.2, label: "январь\n2024"},
+            {value: 4.5, label: "февраль\n2024"},
+            {value: 7.1, label: "март\n2024"},
+            {value: 7, label: "апрель\n2024"},
+            {value: 4.1, label: "май\n2024"},
+            {value: 5.3, label: "июнь\n2024"},
+            {value: 6.1, label: "июль\n2024"},
+            {value: 5.9, label: "август\n2024"},
+            {value: 9.3, label: "сентябрь\n2024"},
+            {value: 8.5, label: "октябрь\n2024"},
+            {value: 10.1, label: "ноябрь\n2024"},
+            {value: 8.2, label: "декабрь\n2024"}
+        ]
+
+        const linearChart = new LinearChart(config)
+        linearChart.plot(data)
+    </script>
+</body>
+</html>
