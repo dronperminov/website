@@ -64,11 +64,14 @@ class JsonParser {
 
     ParseList() {
         this.Consume(["["], "ожидалась открывающая квадратная скобка")
-        this.ParseElement()
 
-        while (this.token?.type === ",") {
-            this.Consume([","], "ожидалась запятая")
+        if (this.token?.type !== "]") {
             this.ParseElement()
+
+            while (this.token?.type === ",") {
+                this.Consume([","], "ожидалась запятая")
+                this.ParseElement()
+            }
         }
 
         this.Consume(["]"], "ожидалась закрывающая квадратная скобка")
@@ -76,11 +79,14 @@ class JsonParser {
 
     ParseObject() {
         this.Consume(["{"], "ожидалась открывающая фигурная скобка")
-        this.ParseKeyVaLue()
 
-        while (this.token?.type === ",") {
-            this.Consume([","], "ожидалась запятая")
+        if (this.token?.type !== "}") {
             this.ParseKeyVaLue()
+
+            while (this.token?.type === ",") {
+                this.Consume([","], "ожидалась запятая")
+                this.ParseKeyVaLue()
+            }
         }
 
         this.Consume(["}"], "ожидалась закрывающая фигурная скобка")
